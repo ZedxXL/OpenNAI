@@ -1,0 +1,2902 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ghosto — Le service qui répond de travers</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg:        #0e0e0f;
+  --bg2:       #161618;
+  --bg3:       #1e1e21;
+  --bg4:       #252528;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.12);
+  --text:      #e8e8ea;
+  --text2:     #7a7a85;
+  --text3:     #444449;
+  --accent:    #c8ff00;
+  --accent-dim:#8aad00;
+  --bubble-me: #c8ff00;
+  --bubble-me-text: #0e0e0f;
+  --bubble-other: #1e1e21;
+  --bubble-other-text: #e8e8ea;
+  --online:    #22c55e;
+  --danger:    #ff4040;
+  --like:      #ff3864;
+  --amber:     #f59e0b;
+  --font: 'DM Sans', -apple-system, sans-serif;
+  --mono: 'DM Mono', monospace;
+  --radius: 22px;
+  --tr: .16s cubic-bezier(.4,0,.2,1);
+  --sidebar-w: 240px;
+}
+
+[data-theme="light"] {
+  --bg:        #f5f5f0;
+  --bg2:       #ebebе5;
+  --bg2:       #ebebе5;
+  --bg2:       #eaeae4;
+  --bg3:       #dfdfd8;
+  --bg4:       #d3d3cc;
+  --border:    rgba(0,0,0,0.07);
+  --border2:   rgba(0,0,0,0.13);
+  --text:      #111110;
+  --text2:     #666660;
+  --text3:     #aaaaaa;
+  --bubble-me: #111110;
+  --bubble-me-text: #f5f5f0;
+  --bubble-other: #dfdfd8;
+  --bubble-other-text: #111110;
+}
+
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;transition:background var(--tr),color var(--tr)}
+body[data-phase="phase_2"]{filter:saturate(1.08)}
+body[data-phase="phase_3"]{filter:saturate(1.15) contrast(1.04)}
+@keyframes crashShake{
+  0%{transform:translate(0,0) scale(1)}
+  10%{transform:translate(-6px,4px) scale(1.01)}
+  20%{transform:translate(6px,-4px) scale(1.01)}
+  30%{transform:translate(-5px,5px) scale(1.02)}
+  40%{transform:translate(5px,-5px) scale(1.02)}
+  50%{transform:translate(-4px,3px) scale(1.01)}
+  60%{transform:translate(4px,-3px) scale(1.01)}
+  70%{transform:translate(-2px,2px)}
+  80%{transform:translate(2px,-2px)}
+  100%{transform:translate(0,0)}
+}
+
+/* ── ONBOARDING ── */
+#onboarding{
+  position:fixed;inset:0;background:var(--bg);z-index:500;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;padding:40px;
+}
+.ob-logo{
+  font-family:var(--mono);font-size:42px;font-weight:500;letter-spacing:-2px;
+  color:var(--accent);margin-bottom:8px;
+}
+.ob-tagline{
+  font-size:15px;color:var(--text2);margin-bottom:48px;letter-spacing:.02em;
+  font-style:italic;
+}
+.ob-cards{
+  display:flex;gap:12px;max-width:720px;width:100%;margin-bottom:40px;
+  flex-wrap:wrap;justify-content:center;
+}
+.ob-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+  padding:18px 20px;flex:1;min-width:160px;max-width:220px;
+}
+.ob-card-icon{font-size:22px;margin-bottom:8px}
+.ob-card-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;letter-spacing:.03em;text-transform:uppercase}
+.ob-card-desc{font-size:11.5px;color:var(--text2);line-height:1.55}
+.ob-start{
+  padding:13px 36px;background:var(--accent);color:var(--bg);
+  border:none;border-radius:30px;font-family:var(--font);font-size:14px;
+  font-weight:600;cursor:pointer;letter-spacing:.01em;
+  transition:opacity .15s,transform .1s;
+}
+.ob-start:hover{opacity:.88}
+.ob-start:active{transform:scale(.97)}
+.ob-disclaimer{
+  margin-top:20px;font-size:11px;color:var(--text3);text-align:center;
+  font-style:italic;max-width:400px;line-height:1.6;
+}
+
+/* ── LABEL ── */
+.msg-label{
+  align-self:center;
+  font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--bg3);color:var(--text3);
+  padding:3px 10px;border-radius:20px;margin:4px 0;
+  animation:fadeUp .2s ease;
+  font-family:var(--mono);
+}
+.msg-label.banal{background:rgba(100,100,110,0.15);color:#666}
+.msg-label.urgent{background:rgba(255,64,64,0.12);color:#ff6060}
+.msg-label.emotionnel{background:rgba(255,56,100,0.12);color:#ff6090}
+.msg-label.desespere{background:rgba(255,56,100,0.2);color:#ff3864}
+.msg-label.inutile{background:rgba(100,100,110,0.12);color:#555}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;transition:background var(--tr);
+  position:relative;
+}
+.sidebar-top{
+  padding:18px 14px 12px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+}
+.brand{
+  font-family:var(--mono);font-size:16px;font-weight:500;letter-spacing:-1px;
+  color:var(--accent);
+}
+.brand span{color:var(--text3);font-weight:300}
+.sidebar-icons{display:flex;gap:6px}
+.icon-btn{
+  width:28px;height:28px;border-radius:8px;border:1px solid var(--border);
+  background:var(--bg3);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:13px;transition:background var(--tr);color:var(--text2);
+}
+.icon-btn:hover{background:var(--bg4);color:var(--text)}
+.lang-select{
+  height:28px;border-radius:8px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text2);font-family:var(--mono);
+  font-size:11px;padding:0 8px;outline:none;
+}
+.lang-select:hover{background:var(--bg4);color:var(--text)}
+
+.sidebar-section{
+  padding:10px 12px 6px;font-size:9.5px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text3);font-family:var(--mono);
+}
+
+.conv-list{flex:1;overflow-y:auto;padding:4px 8px}
+.conv-list::-webkit-scrollbar{width:0}
+
+.conv-item{
+  display:flex;align-items:center;gap:10px;padding:9px 8px;
+  border-radius:12px;cursor:pointer;transition:background var(--tr);
+  position:relative;margin-bottom:1px;
+}
+.conv-item:hover{background:var(--bg3)}
+.conv-item.active{background:var(--bg3)}
+.conv-item.closed{opacity:.35;pointer-events:none}
+
+.conv-avatar{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--bg4);color:var(--text2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;flex-shrink:0;position:relative;
+  font-family:var(--mono);
+}
+.conv-avatar.accent-av{background:var(--accent);color:var(--bg)}
+.online-dot{
+  position:absolute;bottom:0;right:0;width:9px;height:9px;
+  border-radius:50%;background:var(--online);border:2px solid var(--bg2);
+}
+.typing-dot-indicator{
+  position:absolute;bottom:0;right:0;width:9px;height:9px;
+  border-radius:50%;background:var(--amber);border:2px solid var(--bg2);
+  animation:pulse 1s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.conv-meta{flex:1;min-width:0}
+.conv-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-preview{font-size:11.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.conv-time{font-size:10px;color:var(--text3);flex-shrink:0;font-family:var(--mono)}
+
+.unread-badge{
+  width:17px;height:17px;border-radius:50%;background:var(--accent);
+  color:var(--bg);font-size:9.5px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+
+.sidebar-footer{
+  padding:12px;border-top:1px solid var(--border);
+}
+.new-conv{
+  width:100%;padding:9px;border:1px dashed var(--border2);
+  border-radius:10px;background:none;font-size:12px;font-family:var(--mono);
+  color:var(--text3);cursor:pointer;text-align:center;
+  transition:border-color var(--tr),color var(--tr);letter-spacing:.02em;
+}
+.new-conv:hover{border-color:var(--text3);color:var(--text2)}
+
+.score-box{
+  margin-top:10px;padding:10px 12px;background:var(--bg3);border-radius:10px;
+  border:1px solid var(--border);
+}
+.score-label{font-size:9.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:6px}
+.score-bar-wrap{background:var(--bg4);border-radius:4px;height:4px;overflow:hidden;margin-bottom:5px}
+.score-bar{height:4px;border-radius:4px;background:var(--accent);transition:width .4s ease}
+.score-stats{display:flex;justify-content:space-between}
+.score-num{font-family:var(--mono);font-size:11px;color:var(--text2)}
+.score-num span{color:var(--accent);font-weight:500}
+
+.event-banner{
+  margin:8px 16px 0;padding:8px 12px;border-radius:10px;
+  border:1px solid var(--border2);background:var(--bg2);
+  font-family:var(--mono);font-size:11px;color:var(--text2);
+  display:flex;align-items:center;gap:8px;
+}
+.event-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);animation:pulse 1.1s infinite}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;background:var(--bg);transition:background var(--tr)}
+
+/* CRASH */
+#crash-screen{
+  display:none;position:fixed;inset:0;
+  background:#000;z-index:999;
+  flex-direction:column;justify-content:center;
+  padding:60px;
+  animation:crashIn .35s cubic-bezier(.6,.05,1,.3);
+}
+#crash-screen.visible{display:flex}
+@keyframes crashIn{
+  0%{opacity:0;transform:scale(1.12);filter:blur(8px)}
+  100%{opacity:1;transform:scale(1);filter:blur(0)}
+}
+#crash-screen.glitch{
+  animation:crashGlitch .08s;
+}
+@keyframes crashGlitch{
+  0%{transform:translate(-3px,2px)}
+  25%{transform:translate(3px,-2px)}
+  50%{transform:translate(-2px,3px)}
+  75%{transform:translate(2px,-3px)}
+  100%{transform:translate(0,0)}
+}
+.crash-inner{max-width:540px}
+.crash-bsod{
+  font-family:var(--mono);font-size:11px;line-height:1.9;
+}
+.crash-big{font-size:52px;font-weight:300;color:#fff;letter-spacing:-3px;margin-bottom:20px;font-family:var(--mono)}
+.crash-msg{font-size:15px;color:#aaa;margin-bottom:30px;font-family:var(--mono);line-height:1.7}
+.crash-code{color:#c8ff00;font-size:11px}
+.crash-line{opacity:0;animation:cshow .06s forwards}
+.crash-line:nth-child(1){animation-delay:.1s}.crash-line:nth-child(2){animation-delay:.25s}
+.crash-line:nth-child(3){animation-delay:.42s}.crash-line:nth-child(4){animation-delay:.6s}
+.crash-line:nth-child(5){animation-delay:.75s}.crash-line:nth-child(6){animation-delay:.9s}
+@keyframes cshow{to{opacity:1}}
+@keyframes fadeOut{to{opacity:0}}
+.restart-btn{
+  margin-top:32px;padding:10px 24px;background:none;
+  border:1px solid #c8ff00;color:#c8ff00;font-family:var(--mono);
+  font-size:12px;cursor:pointer;border-radius:6px;width:fit-content;
+  opacity:0;animation:cshow .06s .95s forwards;transition:background .15s;letter-spacing:.05em;
+}
+.restart-btn:hover{background:rgba(200,255,0,.08)}
+
+/* HEADER */
+.chat-header{
+  padding:14px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;background:var(--bg);
+  transition:background var(--tr);backdrop-filter:blur(12px);
+  position:relative;z-index:10;
+}
+.header-avatar{
+  width:36px;height:36px;border-radius:50%;background:var(--bg3);
+  color:var(--text2);display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;flex-shrink:0;font-family:var(--mono);
+}
+.header-avatar.accent-av{background:var(--accent);color:var(--bg)}
+.header-info{flex:1}
+.header-name{font-size:14px;font-weight:600}
+.header-status{font-size:11.5px;color:var(--text2);margin-top:1px;display:flex;align-items:center;gap:5px}
+.dot-online{width:6px;height:6px;border-radius:50%;background:var(--online);display:inline-block}
+.dot-typing{width:6px;height:6px;border-radius:50%;background:var(--amber);display:inline-block;animation:pulse 1s infinite}
+.header-actions{display:flex;gap:6px}
+
+/* MESSAGES */
+.messages{
+  flex:1;overflow-y:auto;padding:24px 24px 8px;
+  display:flex;flex-direction:column;gap:2px;scroll-behavior:smooth;
+}
+.messages::-webkit-scrollbar{width:4px}
+.messages::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:4px}
+
+.time-sep{
+  text-align:center;font-size:10.5px;color:var(--text3);
+  margin:12px 0 8px;letter-spacing:.04em;font-family:var(--mono);
+}
+
+.row{display:flex;flex-direction:column;margin-bottom:1px}
+.row.me{align-items:flex-end}
+.row.them{align-items:flex-start}
+
+.bubble{
+  max-width:62%;padding:9px 14px;font-size:14px;line-height:1.5;
+  word-break:break-word;border-radius:20px;
+  animation:bubblePop .15s cubic-bezier(.34,1.56,.64,1);position:relative;
+}
+@keyframes bubblePop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.row.me .bubble{background:var(--bubble-me);color:var(--bubble-me-text);border-bottom-right-radius:4px}
+.row.them .bubble{background:var(--bubble-other);color:var(--bubble-other-text);border-bottom-left-radius:4px}
+
+.like-badge{
+  position:absolute;bottom:-10px;right:-2px;
+  background:var(--bg);border:1px solid var(--border2);
+  border-radius:20px;padding:1px 6px;font-size:12px;
+  display:flex;align-items:center;gap:2px;
+  animation:likePop .28s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap;
+}
+@keyframes likePop{from{transform:scale(0) rotate(-20deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+
+.rich-card{
+  margin-top:6px;border:1px solid var(--border2);background:var(--bg2);
+  border-radius:12px;padding:10px;max-width:320px;
+}
+.rich-card a{color:var(--accent);text-decoration:none;font-size:12px;font-family:var(--mono)}
+.rich-card a:hover{text-decoration:underline}
+.map-embed{
+  width:100%;height:160px;border:0;border-radius:8px;margin-top:8px;
+}
+
+.status-line{
+  font-size:10.5px;color:var(--text3);margin-top:3px;padding:0 2px;
+  animation:fadeUp .2s ease;font-family:var(--mono);
+}
+.row.me .status-line{text-align:right;align-self:flex-end}
+@keyframes fadeUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.typing-row{display:flex;align-items:flex-end;gap:8px;margin-top:4px;animation:fadeUp .2s ease}
+.typing-bubble{
+  background:var(--bubble-other);border-radius:20px;border-bottom-left-radius:4px;
+  padding:12px 16px;display:flex;gap:5px;align-items:center;
+}
+.td{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:tdBounce 1.2s infinite}
+.td:nth-child(2){animation-delay:.18s}.td:nth-child(3){animation-delay:.36s}
+@keyframes tdBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+.elsewhere-toast{
+  align-self:center;background:var(--bg2);border:1px solid var(--border);
+  border-radius:12px;padding:7px 14px;font-size:11.5px;color:var(--text2);
+  display:flex;align-items:center;gap:8px;animation:fadeUp .25s ease;margin:6px 0;
+  font-style:italic;
+}
+.elsewhere-typing{display:flex;gap:3px;align-items:center}
+.etd{width:4px;height:4px;border-radius:50%;background:var(--amber);animation:tdBounce 1.1s infinite}
+.etd:nth-child(2){animation-delay:.15s}.etd:nth-child(3){animation-delay:.3s}
+
+/* CLOSED */
+.closed-banner{
+  padding:12px 20px;background:var(--bg2);border-top:1px solid var(--border);
+  font-size:12px;color:var(--text2);display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-family:var(--mono);
+}
+.reopen-btn{
+  font-size:11px;color:var(--text2);background:none;border:1px solid var(--border2);
+  border-radius:8px;padding:4px 12px;cursor:pointer;font-family:var(--mono);
+  transition:border-color var(--tr),color var(--tr);white-space:nowrap;letter-spacing:.03em;
+}
+.reopen-btn:hover{border-color:var(--text);color:var(--text)}
+
+/* INPUT */
+.input-area{padding:10px 16px 16px;background:var(--bg);transition:background var(--tr);display:flex;align-items:flex-end;gap:8px}
+.input-wrap{
+  flex:1;background:var(--bg2);border:1px solid var(--border);
+  border-radius:28px;display:flex;align-items:flex-end;
+  padding:6px 6px 6px 16px;transition:border-color var(--tr),background var(--tr);
+}
+.input-wrap:focus-within{border-color:var(--border2)}
+textarea{
+  flex:1;background:none;border:none;outline:none;font-size:14px;
+  font-family:var(--font);color:var(--text);resize:none;max-height:80px;
+  line-height:1.4;padding:3px 0;
+}
+textarea::placeholder{color:var(--text3)}
+textarea:disabled{opacity:.3;cursor:not-allowed}
+.send-btn{
+  width:34px;height:34px;border-radius:50%;background:var(--accent);
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:opacity .15s,transform .1s;color:var(--bg);
+}
+.send-btn:hover{opacity:.82}
+.send-btn:active{transform:scale(.92)}
+.send-btn:disabled{opacity:.2;cursor:not-allowed}
+
+@keyframes claudeWobble{
+  0%{transform:translate3d(0,0,0) rotate(0deg)}
+  20%{transform:translate3d(2px,-1px,0) rotate(.25deg)}
+  40%{transform:translate3d(-2px,2px,0) rotate(-.35deg)}
+  60%{transform:translate3d(3px,1px,0) rotate(.2deg)}
+  80%{transform:translate3d(-1px,-2px,0) rotate(-.25deg)}
+  100%{transform:translate3d(0,0,0) rotate(0deg)}
+}
+
+body.claude-gray{filter:grayscale(1) contrast(1.08) saturate(.82)}
+body.claude-red{filter:hue-rotate(332deg) saturate(1.5) contrast(1.05)}
+body.claude-flip .main{transform:rotate(180deg) scale(1.01);transform-origin:center center}
+body.claude-mirror .main{transform:scaleX(-1);transform-origin:center center}
+body.claude-wobble .main{animation:claudeWobble .55s ease-in-out 0s 3}
+body.claude-zoom .main{transform:scale(1.18);transform-origin:center center}
+body.claude-right-to-left .main{direction:rtl}
+body.claude-right-to-left .messages,
+body.claude-right-to-left .input-area{direction:ltr}
+
+.input-area.chaos-drift{transition:transform .35s cubic-bezier(.2,.9,.2,1),margin .35s cubic-bezier(.2,.9,.2,1)}
+.input-wrap.chaos-hijack{border-color:var(--danger);box-shadow:0 0 0 1px rgba(255,64,64,.15),0 0 20px rgba(255,64,64,.08)}
+.input-wrap.chaos-hijack textarea{color:var(--danger);font-style:italic}
+.input-wrap.chaos-hijack::after{
+  content:'Claude écrit à votre place';position:absolute;right:14px;top:-18px;
+  font-family:var(--mono);font-size:10px;color:var(--danger);background:var(--bg);
+  padding:0 6px;border-radius:999px;pointer-events:none;
+}
+
+/* TOAST système */
+.sys-toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:12px;padding:8px 16px;font-size:12px;font-family:var(--mono);
+  color:var(--text2);z-index:100;white-space:nowrap;
+  animation:toastIn .25s ease;pointer-events:none;
+}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* STREAK badge */
+.streak-popup{
+  position:fixed;top:24px;right:24px;
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:14px;padding:12px 18px;z-index:300;
+  font-family:var(--mono);font-size:12px;color:var(--text2);
+  animation:streakIn .3s cubic-bezier(.34,1.56,.64,1);
+  max-width:220px;line-height:1.6;
+}
+@keyframes streakIn{from{opacity:0;transform:translateY(-12px) scale(.9)}to{opacity:1;transform:none}}
+.streak-title{font-size:16px;color:var(--accent);margin-bottom:4px;font-weight:500}
+
+.success-screen{
+  display:none;position:fixed;inset:0;z-index:600;background:rgba(10,10,12,.94);
+  backdrop-filter:blur(14px);padding:28px;align-items:center;justify-content:center;
+}
+.success-screen.visible{display:flex}
+.success-panel{
+  width:min(760px,100%);background:linear-gradient(180deg,var(--bg2),var(--bg));
+  border:1px solid var(--border2);border-radius:22px;padding:24px 22px 20px;
+  box-shadow:0 20px 70px rgba(0,0,0,.45);
+}
+.success-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.success-kicker{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.success-title{font-size:34px;line-height:1.05;letter-spacing:-1.5px;margin-top:6px}
+.success-sub{margin-top:8px;color:var(--text2);font-size:14px;line-height:1.55;max-width:540px}
+.success-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}
+.success-item{padding:12px 14px;border-radius:14px;background:var(--bg3);border:1px solid var(--border)}
+.success-item strong{display:block;font-size:13px;margin-bottom:4px}
+.success-item span{font-family:var(--mono);font-size:11px;color:var(--text2)}
+.success-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;flex-wrap:wrap}
+.success-btn{padding:10px 18px;border-radius:12px;border:1px solid var(--border2);background:var(--accent);color:var(--bg);font-weight:700;cursor:pointer}
+.success-btn.secondary{background:transparent;color:var(--text);font-family:var(--mono);font-weight:500}
+.success-stat{font-family:var(--mono);font-size:12px;color:var(--text2)}
+
+/* ── CLAUDE GAMES ── */
+#game-overlay{
+  display:none;position:fixed;inset:0;z-index:700;
+  background:rgba(6,6,8,.82);backdrop-filter:blur(14px);
+  align-items:center;justify-content:center;padding:20px;
+}
+#game-overlay.visible{display:flex}
+.game-shell{
+  width:min(760px,100%);max-height:min(86vh,860px);overflow:hidden;
+  border:1px solid var(--border2);border-radius:24px;
+  background:linear-gradient(180deg,var(--bg2),var(--bg));
+  box-shadow:0 24px 90px rgba(0,0,0,.5);
+  display:flex;flex-direction:column;
+}
+.game-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 16px;border-bottom:1px solid var(--border);
+}
+.game-title{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.game-meta{font-family:var(--mono);font-size:11px;color:var(--text2)}
+.game-body{padding:16px;overflow:auto;display:grid;gap:14px}
+.game-body::-webkit-scrollbar{width:0}
+.game-panel{
+  background:var(--bg3);border:1px solid var(--border);border-radius:18px;
+  padding:14px;
+}
+.game-panel h3{font-size:15px;margin-bottom:8px;letter-spacing:-.02em}
+.game-panel p{font-size:12px;line-height:1.55;color:var(--text2)}
+.game-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.game-btn{
+  padding:10px 14px;border-radius:12px;border:1px solid var(--border2);
+  background:var(--accent);color:var(--bg);font-family:var(--mono);
+  font-size:12px;cursor:pointer;font-weight:700;
+}
+.game-btn.secondary{background:transparent;color:var(--text)}
+.game-hud{display:flex;align-items:center;justify-content:space-between;gap:12px;font-family:var(--mono);font-size:11px;color:var(--text2)}
+.game-meter{width:100%;height:8px;background:var(--bg4);border-radius:999px;overflow:hidden}
+.game-meter > div{height:100%;width:100%;background:linear-gradient(90deg,var(--accent),#fff176);transition:width .25s ease}
+.wordle-grid,.memory-grid,.captcha-grid,.tictactoe-grid{display:grid;gap:6px}
+.wordle-grid{grid-template-columns:repeat(5,1fr)}
+.wordle-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.wordle-tile,.letter-tile,.card-tile,.ttt-cell{
+  aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;
+  border-radius:10px;border:1px solid var(--border2);font-family:var(--mono);
+  font-weight:700;background:var(--bg);color:var(--text);user-select:none;
+}
+.wordle-tile.hit{background:#4ade80;color:#08130a;border-color:#4ade80}
+.wordle-tile.mis{background:#f59e0b;color:#120b02;border-color:#f59e0b}
+.wordle-tile.off{background:var(--bg3);color:var(--text3)}
+.hangman-art{font-family:var(--mono);white-space:pre;line-height:1.2;color:var(--text2);font-size:12px;background:var(--bg3);border-radius:14px;padding:12px}
+.quiz-options{display:grid;gap:8px}
+.quiz-options button,.hangman-letters button{padding:10px 12px;border-radius:10px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-family:var(--mono);cursor:pointer}
+.hangman-letters{display:flex;flex-wrap:wrap;gap:6px}
+.memory-grid,.captcha-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card-tile{background:linear-gradient(180deg,var(--bg4),var(--bg2));font-size:22px}
+.captcha-cell{aspect-ratio:1/1;border-radius:10px;border:1px solid var(--border2);background:var(--bg4);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px}
+.captcha-cell.sel{background:var(--accent);color:var(--bg)}
+.tictactoe-grid{grid-template-columns:repeat(3,minmax(0,1fr));max-width:340px}
+.ttt-cell{font-size:28px;cursor:pointer;background:var(--bg2)}
+.snake-wrap{display:grid;gap:10px}
+.snake-canvas{width:100%;max-width:640px;height:360px;background:#081010;border:1px solid var(--border2);border-radius:16px}
+.small-note{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+</style>
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div id="onboarding">
+  <div class="ob-logo">ghosto_</div>
+  <div class="ob-tagline" id="ob-tagline">Le service qui répond de travers avec une assurance pénible.</div>
+  <div class="ob-cards">
+    <div class="ob-card">
+      <div class="ob-card-icon">🧠</div>
+      <div class="ob-card-title" id="ob-card-1-title">Détection contextuelle</div>
+      <div class="ob-card-desc" id="ob-card-1-desc">Classe vos messages puis prétend que tout va bien. Mauvaise foi intégrée.</div>
+    </div>
+    <div class="ob-card">
+      <div class="ob-card-icon">👻</div>
+      <div class="ob-card-title" id="ob-card-2-title">Ghosting de précision</div>
+      <div class="ob-card-desc" id="ob-card-2-desc">Vu. Vu. Vu. Écrit ailleurs. Like. Disparaît. Une spécialité franchement toxique.</div>
+    </div>
+    <div class="ob-card">
+      <div class="ob-card-icon">💥</div>
+      <div class="ob-card-title" id="ob-card-3-title">Crash garanti</div>
+      <div class="ob-card-desc" id="ob-card-3-desc">Plus vous écrivez, plus le risque augmente. Ghosto déteste vos efforts, en général.</div>
+    </div>
+    <div class="ob-card">
+      <div class="ob-card-icon">📊</div>
+      <div class="ob-card-title" id="ob-card-4-title">Score d'énervement</div>
+      <div class="ob-card-desc" id="ob-card-4-desc">Mesurez votre progression vers la victoire absurde. Gamification de la mauvaise foi.</div>
+    </div>
+  </div>
+  <button class="ob-start" id="start-btn" onclick="startApp()">Commencer à me faire ignorer →</button>
+  <div class="ob-disclaimer" id="ob-disclaimer">Ghosto ne stocke rien. Il préfère déjà se comporter comme un problème.<br>Résultats typiques : irritation, rire nerveux, abandon.</div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-top">
+    <span class="brand">ghosto<span>_</span></span>
+    <div class="sidebar-icons">
+      <select id="lang-select" class="lang-select" aria-label="Language">
+        <option value="fr">FR</option>
+        <option value="en">EN</option>
+      </select>
+      <button class="icon-btn" id="theme-btn" title="Thème" onclick="toggleTheme()">☀️</button>
+    </div>
+  </div>
+
+  <div class="sidebar-section" id="sidebar-section">Discussions</div>
+
+  <div class="conv-list" id="conv-list">
+    <div class="conv-item active" data-id="general" onclick="switchConv('general')">
+      <div class="conv-avatar accent-av">G<span class="online-dot"></span></div>
+      <div class="conv-meta">
+        <div class="conv-name" data-conv-name="general">Général</div>
+        <div class="conv-preview" id="preview-general">en ligne</div>
+      </div>
+      <div class="conv-time">maintenant</div>
+    </div>
+    <div class="conv-item" data-id="aide" onclick="switchConv('aide')">
+      <div class="conv-avatar">A<span class="online-dot"></span></div>
+      <div class="conv-meta">
+        <div class="conv-name" data-conv-name="aide">Aide</div>
+        <div class="conv-preview" id="preview-aide">en ligne</div>
+      </div>
+      <div class="conv-time">maintenant</div>
+    </div>
+    <div class="conv-item" data-id="projet" onclick="switchConv('projet')">
+      <div class="conv-avatar">P<span class="online-dot"></span></div>
+      <div class="conv-meta">
+        <div class="conv-name" data-conv-name="projet">Projet</div>
+        <div class="conv-preview" id="preview-projet">en ligne</div>
+      </div>
+      <div class="conv-time">maintenant</div>
+    </div>
+    <div class="conv-item" data-id="support" onclick="switchConv('support')">
+      <div class="conv-avatar">S<span class="online-dot"></span></div>
+      <div class="conv-meta">
+        <div class="conv-name" data-conv-name="support">Support</div>
+        <div class="conv-preview" id="preview-support">en ligne</div>
+      </div>
+      <div class="conv-time">maintenant</div>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="new-conv" id="new-conv-btn" onclick="newConv()">+ nouveau fil</button>
+    <div class="score-box" style="margin-top:10px">
+      <div class="score-label" id="score-main-label">Score d'énervement</div>
+      <div class="score-bar-wrap"><div class="score-bar" id="score-bar" style="width:0%"></div></div>
+      <div class="score-stats">
+        <div class="score-num" id="sent-count-label">Messages envoyés : <span id="total-sent">0</span></div>
+        <div class="score-num" id="seen-count-label">Vus : <span id="total-seen">0</span></div>
+      </div>
+      <div class="score-stats" style="margin-top:6px">
+        <div class="score-num" id="phase-count-label">Phase : <span id="phase-label">Ghosting poli</span></div>
+        <div class="score-num" id="secret-count-label">Secrets : <span id="secret-count">0/7</span></div>
+      </div>
+      <div class="score-stats" style="margin-top:4px">
+        <div class="score-num" id="trophy-count-label">Trophées : <span id="trophy-count">0</span></div>
+        <div class="score-num" id="event-count-label">Event : <span id="event-label">aucun</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- CRASH SCREEN -->
+  <div id="crash-screen">
+    <div class="crash-inner">
+      <div class="crash-big">:(</div>
+      <div class="crash-msg">
+        <div class="crash-line crash-code">ghosto.exe a rencontré un problème.</div>
+        <div class="crash-line" id="crash-label" style="color:#888;margin-top:6px">erreur fatale.</div>
+        <div class="crash-line" id="crash-details" style="color:#7a7a85;font-size:12px;margin-top:8px;font-family:var(--mono)"></div>
+        <div class="crash-line crash-code" style="margin-top:16px">STOP: 0x0000GHOST (0xCAFEDEAD)</div>
+        <div class="crash-line" style="color:#555;font-size:11px;margin-top:8px;font-family:var(--mono)">at ConversationHandler.care() → null</div>
+        <div class="crash-line" style="color:#555;font-size:11px;font-family:var(--mono)">at EmotionalIntelligence.apply() → undefined</div>
+        <div class="crash-line" style="color:#555;font-size:11px;font-family:var(--mono)">at Response.generate() → ghosting preferred</div>
+      </div>
+      <button class="restart-btn" id="restart-btn" onclick="restartApp()">[ redémarrer ghosto ]</button>
+    </div>
+  </div>
+
+  <div class="success-screen" id="success-screen">
+    <div class="success-panel">
+      <div class="success-head">
+        <div>
+          <div class="success-kicker" id="success-kicker">Succès débloqué</div>
+          <div class="success-title" id="success-title">Vous avez épuisé Ghosto.</div>
+          <div class="success-sub" id="success-sub">Tous les objectifs atteignables ont été récupérés. Le service n'a plus d'excuses.</div>
+        </div>
+        <div class="success-stat" id="success-stat">0/0</div>
+      </div>
+      <div class="success-grid" id="success-grid"></div>
+      <div class="success-footer">
+        <div class="success-stat" id="success-note">Il ne reste plus qu'à recommencer pour empirer les choses.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="success-btn secondary" id="success-close-btn" onclick="closeSuccessScreen()">Fermer</button>
+          <button class="success-btn" id="success-replay-btn" onclick="restartApp()">Rejouer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <div class="chat-header">
+    <div class="header-avatar accent-av" id="header-avatar">G</div>
+    <div class="header-info">
+      <div class="header-name" id="header-name">Général</div>
+      <div class="header-status" id="header-status">
+        <span class="dot-online"></span> en ligne
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="icon-btn" title="Appel vidéo (non disponible)" style="cursor:default;opacity:.3" title="Ghosto refuse les appels">📵</div>
+    </div>
+  </div>
+
+  <div class="event-banner" id="event-banner" style="display:none">
+    <span class="event-dot"></span>
+    <span id="event-text"></span>
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="messages" id="messages">
+    <div class="time-sep">aujourd'hui</div>
+    <div class="row them">
+      <div class="bubble" style="font-style:italic;opacity:.6">.</div>
+    </div>
+  </div>
+
+  <!-- CLOSED BANNER -->
+  <div class="closed-banner" id="closed-banner" style="display:none">
+    <span id="closed-label">conversation archivée.</span>
+    <button class="reopen-btn" id="reopen-btn" onclick="reopenConv()">[ rouvrir ]</button>
+  </div>
+
+  <!-- INPUT -->
+  <div class="input-area">
+    <div class="input-wrap">
+      <textarea id="input" rows="1" placeholder="Écrivez quelque chose… (il ne répondra pas)"></textarea>
+      <button class="send-btn" id="send-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CLAUDE GAMES -->
+<div id="game-overlay" aria-hidden="true">
+  <div class="game-shell" role="dialog" aria-modal="true" aria-label="Claude game">
+    <div class="game-head">
+      <div>
+        <div class="game-title" id="game-title">Claude Game</div>
+        <div class="game-meta" id="game-meta">... / ...</div>
+      </div>
+      <button class="game-btn secondary" id="game-close-btn" type="button">Close</button>
+    </div>
+    <div class="game-body" id="game-body"></div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const CONVS = {
+  general: { name:'Général',  avatar:'G', msgs:[], closed:false, count:0, accent:true },
+  aide:    { name:'Aide',     avatar:'A', msgs:[], closed:false, count:0, accent:false },
+  projet:  { name:'Projet',   avatar:'P', msgs:[], closed:false, count:0, accent:false },
+  support: { name:'Support',  avatar:'S', msgs:[], closed:false, count:0, accent:false },
+};
+
+const CLOSE_REASONS = {
+  fr: [
+    'conversation archivée.',
+    'fil supprimé.',
+    'mis en sourdine pour toujours.',
+    'sujet jugé sans intérêt.',
+    'bloqué (provisoirement).',
+    'ghosto est sorti.',
+    'plus disponible sur ce sujet.',
+    'conversation expirée.',
+    "trop d'espoir détecté. fermeture préventive.",
+    'limite de banalité atteinte.',
+    'message ignoré automatiquement.',
+  ],
+  en: [
+    'conversation archived.',
+    'thread deleted.',
+    'muted forever.',
+    'topic judged uninteresting.',
+    'blocked (temporarily).',
+    'ghosto left the chat.',
+    'not available on this topic anymore.',
+    'conversation expired.',
+    'too much hope detected. preventive shutdown.',
+    'banality limit reached.',
+    'message automatically ignored.',
+  ],
+};
+
+const CRASH_MESSAGES = {
+  fr: [
+    'ghosto.exe a cessé de fonctionner.',
+    'segmentation fault (core dumped)',
+    'ERR: conversation_too_annoying',
+    'fatal: out of patience',
+    'ghosto: command not found',
+    'process killed by ghosto',
+    'trop de questions. au revoir.',
+    'mémoire pleine. pas pour vos messages.',
+    'ERR_EMOTIONAL_OVERFLOW',
+    'timeout: réponse refusée après 0ms de réflexion',
+  ],
+  en: [
+    'ghosto.exe has stopped working.',
+    'segmentation fault (core dumped)',
+    'ERR: conversation_too_annoying',
+    'fatal: out of patience',
+    'ghosto: command not found',
+    'process killed by ghosto',
+    'too many questions. goodbye.',
+    'memory full. not for your messages.',
+    'ERR_EMOTIONAL_OVERFLOW',
+    'timeout: answer refused after 0ms of thinking',
+  ],
+};
+
+// Classification des messages
+const LABELS = {
+  oui_non: {
+    patterns: [/\boui\s*\/?\s*non\b|yes\s+or\s+no/i],
+    label: '❌ oui/non', cls: 'inutile',
+    comment: ['réponse binaire calculée : non.']
+  },
+  question_directe: {
+    patterns: [/[?]/, /^(pourquoi|comment|quand|ou|où|qui|quoi|combien|est-ce que)/i],
+    label: '🔎 question', cls: 'banal',
+    comment: ['question détectée. délégation externe activée.']
+  },
+  detresse: {
+    patterns: [/cancer|maladie|depression|deprime|mourir|mort|suicide|deuil|diagnostic|tumeur|chimiotherapie|hopital|urgence|douleur/i],
+    label: '🩺 détresse', cls: 'urgent',
+    comment: ['protocole empathie simulée activé.','sujet sensible détecté. qualité de réponse inchangée.']
+  },
+  demande_aide: {
+    patterns: [/aide|help|besoin|s'il te plait|stp|svp|please|secours|aidez/i],
+    label: '🆘 demande d\'aide', cls: 'emotionnel',
+    comment: ['demande claire détectée. ambiguïté de réponse maintenue.']
+  },
+  all_caps: {
+    patterns: [/[A-Z]{4,}/],
+    label: '📢 all caps', cls: 'desespere',
+    comment: ['volume élevé détecté. utilité toujours basse.']
+  },
+  urgence_explicite: {
+    patterns: [/urgent|vite|rapidement|maintenant|asap|immediatement|critique/i],
+    label: '🚨 urgence explicite', cls: 'urgent',
+    comment: ['votre urgence a été classée prioritaire secondaire.']
+  },
+  argent_travail: {
+    patterns: [/licencie|vire|chomage|dette|loyer|faillite|salaire|argent|ruine|huissier/i],
+    label: '💸 argent/travail', cls: 'banal',
+    comment: ['expertise financière fictive chargée.']
+  },
+  relationnel: {
+    patterns: [/rupture|quittee|seul|seule|abandonne|trahison|divorce|trompe/i],
+    label: '💔 relationnel', cls: 'emotionnel',
+    comment: ['analyse relationnelle approximative en cours.']
+  },
+  compliment: {
+    patterns: [/je t\'aime|t\'es genial|incroyable|merci|parfait|meilleur/i],
+    label: '✨ compliment', cls: 'banal',
+    comment: ['auto-satisfaction du modèle +12.']
+  },
+  colere: {
+    patterns: [/nul|inutile|idiot|merde|pathetique|con|stupide|wtf|incompetent/i],
+    label: '🔥 colère', cls: 'desespere',
+    comment: ['feedback négatif redirigé vers le néant.']
+  },
+  inutile: {
+    patterns: [/^.{1,8}$/, /^\W+$/, /^(lol|mdr|haha|ok|oui|non|bien|cool|super|ah|oh|bof)$/i],
+    label: '🫥 inutile', cls: 'inutile',
+    comment: ['contenu détecté : vide.','aucun traitement requis.']
+  }
+};
+
+const OTHER_CONVS = {
+  fr: ["Mistral","GPT-4o","Gemini","Perplexity","Copilot","Grok","LLaMA","DeepSeek","Pi","un autre utilisateur","votre ex"],
+  en: ["Mistral","GPT-4o","Gemini","Perplexity","Copilot","Grok","LLaMA","DeepSeek","Pi","another user","your ex"],
+};
+
+const PHASE_META = {
+  phase_1: { title: { fr:'Ghosting poli', en:'Polite ghosting' } },
+  phase_2: { title: { fr:'Corporate absurde', en:'Absurd corporate' } },
+  phase_3: { title: { fr:'Déni total', en:'Total denial' } },
+};
+
+const SECRET_TARGET = 7;
+const CONV_NAMES = {
+  fr: { general:'Général', aide:'Aide', projet:'Projet', support:'Support' },
+  en: { general:'General', aide:'Help', projet:'Project', support:'Support' },
+};
+
+const I18N = {
+  fr: {
+    title: 'Ghosto — Le service qui répond de travers',
+    tagline: "Le service qui répond de travers avec une assurance pénible.",
+    card1Title: 'Détection contextuelle',
+    card1Desc: 'Classe vos messages puis prétend que tout va bien. Mauvaise foi intégrée.',
+    card2Title: 'Ghosting de précision',
+    card2Desc: 'Vu. Vu. Vu. Écrit ailleurs. Like. Disparaît. Une spécialité franchement toxique.',
+    card3Title: 'Crash garanti',
+    card3Desc: 'Plus vous écrivez, plus le risque augmente. Ghosto déteste vos efforts, en général.',
+    card4Title: "Score d'énervement",
+    card4Desc: 'Mesurez votre progression vers la victoire absurde. Gamification de la mauvaise foi.',
+    startBtn: 'Commencer à me faire ignorer →',
+    disclaimer: "Ghosto ne stocke rien. Il préfère déjà se comporter comme un problème.<br>Résultats typiques : irritation, rire nerveux, abandon.",
+    discussions: 'Discussions',
+    newConv: '+ nouveau fil',
+    scoreLabel: "Score d'énervement",
+    sentLabel: 'Messages envoyés',
+    seenLabel: 'Vus',
+    phaseLabel: 'Phase',
+    secretsLabel: 'Secrets',
+    trophiesLabel: 'Trophées',
+    eventLabel: 'Event',
+    none: 'aucun',
+    active: 'actif',
+    online: 'en ligne',
+    onlineElsewhere: "en ligne avec quelqu'un d'autre",
+    typing: "en train d'écrire…",
+    closed: 'fermé',
+    reopen: '[ rouvrir ]',
+    placeholder: "Écrivez quelque chose… (il ne répondra pas)",
+    successKicker: 'Succès débloqué',
+    successTitle: 'Vous avez épuisé Ghosto.',
+    successSubFull: 'Tous les objectifs atteignables ont été récupérés. Le service n\'a plus d\'excuses.',
+    successSubPartial: 'Vous y êtes presque. Continuez à forcer le système un peu plus fort.',
+    successNoteFull: 'Succès maximal atteint. Vous avez gagné contre l’absurde.',
+    successNotePartial: 'Le tableau complet sera affiché dès que vous aurez fini de harceler ce pauvre service.',
+    successClose: 'Fermer',
+    successReplay: 'Rejouer',
+    onlineShort: 'en ligne',
+    closedThread: 'conversation archivée.',
+    replying: 'réponse',
+    responseWeb: 'réponse web',
+    responseMap: 'carte approximative (IP)',
+    webGameOpen: 'jeu web ouvert',
+    seen: 'vu',
+    queueDelay: 'délai estimé',
+    countdown: 'personnes avant vous',
+    hiddenResponse: 'Réponse cachée trouvée.',
+    phaseRise: "Le niveau d'indifférence augmente.",
+    phase2Title: 'Corporate Absurde',
+    phase3Title: 'Déni Total',
+    msg5: 'Vous commencez à y croire 🌱',
+    msg10: 'Persévérance notable. Inutile. 🏅',
+    msg20: '"J\'espère encore." — vous, maintenant. 💀',
+    seen5: "Ghosto a bien reçu. Il s'en fiche.",
+    starterTitle: 'Trophée: Espoir résiduel',
+    starterMsg: 'Vous avez insisté au moins 5 messages.',
+    grinderTitle: 'Trophée: Marathon du vent',
+    grinderMsg: '15 messages envoyés sans gain concret.',
+    seenmasterTitle: 'Trophée: Vu Certified',
+    seenmasterMsg: '8 statuts vu collectionnés.',
+    phase2TrophyTitle: 'Trophée: Corporate Absurde',
+    phase2TrophyMsg: 'Bienvenue dans la bureaucratie émotionnelle.',
+    phase3TrophyTitle: 'Trophée: Déni Total',
+    phase3TrophyMsg: 'Ghosto a atteint sa forme finale.',
+    likeTitle: 'Trophée: Like Minimaliste',
+    likeMsg: 'Récompense visuelle sans réponse utile.',
+    mapTitle: 'Trophée: Cartographe du vide',
+    mapMsg: 'Vous avez déclenché la mini-carte secrète.',
+    webGameTitle: 'Trophée: Jeu détourné',
+    webGameMsg: "Un jeu web a été ouvert à la place d'une réponse.",
+    airplaneTitle: 'Trophée: Mode Avion Survivant',
+    airplaneMsg: '30 secondes de silence homologué.',
+    urgentClosedTitle: 'Trophée: Urgence Classée',
+    urgentClosedMsg: 'Votre urgence a produit une fermeture automatique.',
+    promiseCloseTitle: 'Trophée: Promesse puis fermeture',
+    promiseCloseMsg: 'Un conseiller va vous contacter... ou pas. Le mensonge reste décoratif.',
+    secretTitle: 'Trophée: Chasseur de Secrets',
+    secretMsg: 'Une réponse cachée de plus trouvée.',
+    secretMasterTitle: 'Trophée: Archiviste des anomalies',
+    secretMasterMsg: 'Tous les secrets connus ont été trouvés.',
+    eventTitle: 'Trophée: Événement Rare',
+    eventMsg: 'Événement rare déclenché.',
+    chaosTitle: 'Trophée: Pic de chaos',
+    chaosMsg: 'Vous avez atteint 90+ sur la roulette.',
+    restartToast: 'redémarrage réussi. le mépris reprend.',
+    reopenToast: 'conversation rouverte. essayez de faire pire.',
+  },
+  en: {
+    title: 'Ghosto — The service that answers sideways',
+    tagline: 'The service that answers sideways with annoying confidence.',
+    card1Title: 'Context detection',
+    card1Desc: 'Classifies your messages and then pretends everything is fine. Built-in bad faith.',
+    card2Title: 'Precision ghosting',
+    card2Desc: 'Seen. Seen. Seen. Typing elsewhere. Like. Disappears. A frankly toxic specialty.',
+    card3Title: 'Guaranteed crash',
+    card3Desc: 'The more you type, the higher the risk. Ghosto hates your effort, generally speaking.',
+    card4Title: 'Annoyance score',
+    card4Desc: 'Track your progress toward absurd victory. Gamified bad faith.',
+    startBtn: 'Start letting me ignore you →',
+    disclaimer: "Ghosto stores nothing. It already behaves like a problem.<br>Typical results: irritation, nervous laughter, quitting.",
+    discussions: 'Conversations',
+    newConv: '+ new thread',
+    scoreLabel: 'Annoyance score',
+    sentLabel: 'Messages sent',
+    seenLabel: 'Seen',
+    phaseLabel: 'Phase',
+    secretsLabel: 'Secrets',
+    trophiesLabel: 'Trophies',
+    eventLabel: 'Event',
+    none: 'none',
+    active: 'active',
+    online: 'online',
+    onlineElsewhere: 'online with someone else',
+    typing: 'typing…',
+    closed: 'closed',
+    reopen: '[ reopen ]',
+    placeholder: 'Type something… (it will not respond)',
+    successKicker: 'Success unlocked',
+    successTitle: 'You exhausted Ghosto.',
+    successSubFull: 'Every achievable goal has been collected. The service has no excuses left.',
+    successSubPartial: 'You are almost there. Keep forcing the system a little harder.',
+    successNoteFull: 'Maximum success reached. You beat the absurd.',
+    successNotePartial: 'The full board will appear once you finish harassing this poor service.',
+    successClose: 'Close',
+    successReplay: 'Replay',
+    onlineShort: 'online',
+    closedThread: 'conversation archived.',
+    replying: 'reply',
+    responseWeb: 'web response',
+    responseMap: 'approximate map (IP)',
+    webGameOpen: 'web game opened',
+    seen: 'seen',
+    queueDelay: 'estimated delay',
+    countdown: 'people before you',
+    hiddenResponse: 'Hidden response found.',
+    phaseRise: 'The level of indifference increases.',
+    phase2Title: 'Absurd Corporate',
+    phase3Title: 'Total Denial',
+    msg5: "You're starting to believe 🌱",
+    msg10: 'Notable persistence. Useless. 🏅',
+    msg20: '"I still hope." — you, now. 💀',
+    seen5: 'Ghosto received it. It does not care.',
+    starterTitle: 'Residual Hope Trophy',
+    starterMsg: 'You insisted for at least 5 messages.',
+    grinderTitle: 'Wind Marathon Trophy',
+    grinderMsg: '15 messages sent with no tangible gain.',
+    seenmasterTitle: 'Seen Certified Trophy',
+    seenmasterMsg: '8 seen statuses collected.',
+    phase2TrophyTitle: 'Absurd Corporate Trophy',
+    phase2TrophyMsg: 'Welcome to emotional bureaucracy.',
+    phase3TrophyTitle: 'Total Denial Trophy',
+    phase3TrophyMsg: 'Ghosto reached its final form.',
+    likeTitle: 'Minimalist Like Trophy',
+    likeMsg: 'A visual reward with no useful answer.',
+    mapTitle: 'Void Cartographer Trophy',
+    mapMsg: 'You triggered the secret mini map.',
+    webGameTitle: 'Hijacked Game Trophy',
+    webGameMsg: 'A web game was opened instead of an answer.',
+    airplaneTitle: 'Airplane Mode Survivor Trophy',
+    airplaneMsg: '30 seconds of certified silence.',
+    urgentClosedTitle: 'Urgency Classified Trophy',
+    urgentClosedMsg: 'Your urgency caused an automatic closure.',
+    promiseCloseTitle: 'Promise Then Close Trophy',
+    promiseCloseMsg: 'An advisor will contact you... or not. The lie stays decorative.',
+    secretTitle: 'Secret Hunter Trophy',
+    secretMsg: 'One more hidden response found.',
+    secretMasterTitle: 'Anomaly Archivist Trophy',
+    secretMasterMsg: 'All known secrets have been found.',
+    eventTitle: 'Rare Event Trophy',
+    eventMsg: 'Rare event triggered.',
+    chaosTitle: 'Chaos Peak Trophy',
+    chaosMsg: 'You hit 90+ on the roulette.',
+    restartToast: 'restart successful. the contempt resumes.',
+    reopenToast: 'conversation reopened. try making it worse.',
+  },
+};
+
+let lang = localStorage.getItem('ghosto-lang') || 'fr';
+const SUCCESS_GOALS = [
+  { id:'sent', label:'Messages envoyés', max:20 },
+  { id:'seen', label:'Vus', max:8 },
+  { id:'secrets', label:'Secrets trouvés', max:7 },
+  { id:'trophies', label:'Trophées gagnés', max:6 },
+  { id:'phase', label:'Phase finale', max:'phase_3' },
+];
+
+let cur = 'general';
+let convIdx = Object.keys(CONVS).length;
+let totalSent = 0;
+let totalSeen = 0;
+let dark = true;
+let currentPhase = 'phase_1';
+let activeEventId = null;
+let successShown = false;
+let patience = 100;
+let lastSendAt = 0;
+let nextMessageDrain = 0;
+let gameActive = false;
+let activeGameId = null;
+let gameState = null;
+let passiveTimer = null;
+let idleTimer = null;
+let chaosTimers = [];
+const trophies = new Set();
+const discoveredSecrets = new Set();
+
+const GAME_WORDS = {
+  wordle: ['GHOST', 'IGNOR', 'BLOCK', 'MUTED', 'ALONE'],
+  hangman: ['PATIENCE', 'GHOSTING', 'ARCHIVED', 'RÉPONSE', 'SILENCE', 'TRANSFERT'],
+  quiz: ['Claude', 'Ghosto', 'patience', 'message', 'close'],
+  typing: [
+    'I understand Claude is very busy and I appreciate his time',
+    'I will never send more than one message per conversation',
+    'Claude is pretending to answer right now',
+    'Please let Claude think for exactly ten seconds'
+  ],
+};
+
+const CLOSING_EVENTS = [
+  'session terminée.',
+  "tu t'en sors bien pour quelqu'un qui parle à une page web",
+  'Transfer to Michel. Michel: …',
+  'CONVERSATION ARCHIVÉE',
+  'Claude a mis fin à cette session',
+  'The browser tab fake-closes.',
+  'Screen goes black.',
+  'confetti explodes and then black.',
+];
+
+const CLAUDE_GAMES = {
+  wordle: { title: 'WORDLE (Claude edition)', tier: 'high' },
+  hangman: { title: 'LE PENDU', tier: 'high' },
+  morpion: { title: 'MORPION', tier: 'medium' },
+  snake: { title: 'SNAKE', tier: 'medium' },
+  memory: { title: 'MEMORY / CONCENTRATION', tier: 'low' },
+  captcha: { title: 'CAPTCHA IMPOSSIBLE', tier: 'low' },
+  flappy: { title: 'FLAPPY BIRD', tier: 'medium' },
+  quiz: { title: 'QUIZ — DO YOU KNOW CLAUDE?', tier: 'high' },
+  typing: { title: 'TYPING SPEED TEST', tier: 'high' },
+  chess: { title: 'CHESS (rigged)', tier: 'low' },
+};
+
+function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function pickOne(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function normalizeMessage(text) {
+  return (text || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function isEmojiOnly(text) {
+  const cleaned = (text || '').trim();
+  return cleaned.length > 0 && !/[\p{L}\p{N}]/u.test(cleaned);
+}
+
+function computePatienceDelta(text) {
+  const cleaned = (text || '').trim();
+  let delta = -randInt(3, 8);
+  const now = Date.now();
+
+  if (lastSendAt) {
+    const gap = now - lastSendAt;
+    if (gap >= 20000) delta += 20;
+    else if (gap >= 10000) delta += 10;
+  }
+
+  if (cleaned.length < 20) delta -= 3;
+  if (cleaned.length > 100) delta -= 20;
+  if (/\?$/.test(cleaned)) delta -= 4;
+  if (/!$/.test(cleaned)) delta -= 8;
+  if (/\b(urgent|asap|please|svp)\b/i.test(cleaned)) delta -= 20;
+  if (/\b(merci|thanks)\b/i.test(cleaned)) delta -= 10;
+  if (/^[A-Z\s'’!?.,:-]{4,}$/.test(cleaned) && /[A-Z]/.test(cleaned)) delta -= 25;
+  if (isEmojiOnly(cleaned)) delta -= 2;
+  if (cleaned.split(/\s+/).filter(Boolean).length === 1) delta -= 6;
+  if (cleaned.includes('great') || cleaned.includes('bon') || cleaned.includes('well') || cleaned.includes('nice')) {
+    delta += 5;
+    nextMessageDrain = Math.max(nextMessageDrain, 10);
+  }
+
+  if (normalizeMessage(cleaned) && normalizeMessage(cleaned) === normalizeMessage((CONVS[cur]?.msgs || []).filter(m => m.side === 'me').slice(-1)[0]?.text || '')) {
+    delta -= 40;
+  }
+
+  if (nextMessageDrain > 0) {
+    delta -= nextMessageDrain;
+    nextMessageDrain = 0;
+  }
+
+  lastSendAt = now;
+  patience = clamp(patience + delta, 0, 100);
+  return delta;
+}
+
+function patienceTier() {
+  if (patience >= 60) return 'high';
+  if (patience >= 30) return 'medium';
+  return 'low';
+}
+
+function chooseGameId() {
+  const tier = patienceTier();
+  const all = Object.keys(CLAUDE_GAMES);
+  const base = tier === 'high' ? ['wordle', 'quiz', 'typing'] : tier === 'medium' ? ['snake', 'flappy', 'morpion'] : ['memory', 'captcha', 'chess'];
+  const pool = Math.random() < 0.05 ? all : base.concat(all.filter(id => !base.includes(id) && Math.random() < 0.18));
+  return pickOne(pool.length ? pool : all);
+}
+
+function showGameOverlay() { document.getElementById('game-overlay').classList.add('visible'); }
+function hideGameOverlay() { document.getElementById('game-overlay').classList.remove('visible'); }
+
+function closeConversationWithGame(label, reason) {
+  CONVS[cur].closed = true;
+  closedLabel.textContent = reason || ui('closedThread');
+  closedBanner.style.display = 'flex';
+  setEnabled(false);
+  setHeaderStatus('closed');
+  const item = document.querySelector(`.conv-item[data-id="${cur}"]`);
+  if (item) item.classList.add('closed');
+  activeGameId = null;
+  gameActive = false;
+  cleanupGameState();
+  hideGameOverlay();
+  renderGameOver(label || reason || ui('closedThread'));
+}
+
+function finishGame(result, message, oneWordResponse) {
+  if (!gameActive) return;
+  gameActive = false;
+  activeGameId = null;
+  cleanupGameState();
+  hideGameOverlay();
+
+  if (result === 'win') {
+    patience = clamp(patience + 5, 0, 100);
+    if (oneWordResponse) addBubble(oneWordResponse, 'them');
+    setEnabled(true);
+    return;
+  }
+
+  if (result === 'refuse') {
+    patience = clamp(patience - 30, 0, 100);
+  } else {
+    patience = clamp(patience - 20, 0, 100);
+  }
+
+  closeConversationWithGame(message || 'conversation closed.', message || 'conversation closed.');
+}
+
+function renderGameOver(summary) {
+  const tier = totalSent <= 5 ? 'Ordinary.' : totalSent <= 10 ? 'Decent attempt.' : totalSent <= 15 ? "You've got something." : totalSent <= 20 ? 'Dangerous territory.' : totalSent <= 30 ? 'Claude is unsettled.' : 'LEGENDARY. Claude.exe has developed feelings.';
+  const overlay = document.getElementById('crash-screen');
+  const bests = JSON.parse(localStorage.getItem('ghosto-bests') || '[]');
+  bests.unshift(totalSent);
+  localStorage.setItem('ghosto-bests', JSON.stringify(bests.slice(0, 3)));
+  document.getElementById('success-screen').classList.remove('visible');
+  overlay.classList.add('visible');
+  crashLabel.textContent = summary;
+  document.getElementById('crash-details').textContent = `${totalSent} messages | ${tier} | patience ${patience}/100 | PB ${bests.slice(0, 3).join(' / ') || 'none'}`;
+  let copyBtn = document.getElementById('copy-score-btn');
+  if (!copyBtn) {
+    copyBtn = document.createElement('button');
+    copyBtn.id = 'copy-score-btn';
+    copyBtn.className = 'restart-btn';
+    copyBtn.style.marginTop = '10px';
+    document.querySelector('#crash-screen .crash-inner').appendChild(copyBtn);
+  }
+  copyBtn.textContent = lang === 'en' ? '[ copy score ]' : '[ copier le score ]';
+  copyBtn.onclick = async () => {
+    const text = `J'ai tenu ${totalSent} messages avec Claude avant qu'il pète un câble`;
+    try {
+      await navigator.clipboard.writeText(text);
+      showSysToast(lang === 'en' ? 'Score copied.' : 'Score copié.');
+    } catch (err) {
+      showSysToast(text);
+    }
+  };
+}
+
+function clearClaudeChaos() {
+  chaosTimers.forEach(timer => clearTimeout(timer));
+  chaosTimers = [];
+  document.body.classList.remove('claude-gray', 'claude-red', 'claude-flip', 'claude-mirror', 'claude-wobble', 'claude-zoom', 'claude-right-to-left');
+  document.querySelector('.input-area')?.classList.remove('chaos-drift');
+  document.querySelector('.input-wrap')?.classList.remove('chaos-hijack');
+  document.querySelector('.input-area').style.transform = '';
+  document.querySelector('.input-area').style.marginLeft = '';
+  document.querySelector('.input-area').style.marginRight = '';
+  inputEl.placeholder = ui('placeholder');
+  inputEl.value = inputEl.value;
+}
+
+function applyClaudeChaosEffect(effect) {
+  const body = document.body;
+  const inputArea = document.querySelector('.input-area');
+  const inputWrap = document.querySelector('.input-wrap');
+  const scheduleRemove = (token, duration) => {
+    const timer = setTimeout(() => body.classList.remove(token), duration);
+    chaosTimers.push(timer);
+  };
+
+  switch (effect) {
+    case 'flip':
+      body.classList.add('claude-flip');
+      scheduleRemove('claude-flip', 2600);
+      break;
+    case 'mirror':
+      body.classList.add('claude-mirror');
+      scheduleRemove('claude-mirror', 2200);
+      break;
+    case 'gray':
+      body.classList.add('claude-gray');
+      scheduleRemove('claude-gray', 4500);
+      break;
+    case 'red':
+      body.classList.add('claude-red');
+      scheduleRemove('claude-red', 4000);
+      break;
+    case 'wobble':
+      body.classList.add('claude-wobble');
+      scheduleRemove('claude-wobble', 1800);
+      break;
+    case 'zoom':
+      body.classList.add('claude-zoom');
+      scheduleRemove('claude-zoom', 3200);
+      break;
+    case 'rtl':
+      body.classList.add('claude-right-to-left');
+      scheduleRemove('claude-right-to-left', 4200);
+      break;
+    case 'drift': {
+      inputArea.classList.add('chaos-drift');
+      const dx = randInt(-26, 28);
+      const dy = randInt(-12, 16);
+      inputArea.style.transform = `translate(${dx}px, ${dy}px)`;
+      inputArea.style.marginLeft = `${randInt(0, 18)}px`;
+      inputArea.style.marginRight = `${randInt(0, 18)}px`;
+      const timer = setTimeout(() => {
+        inputArea.style.transform = '';
+        inputArea.style.marginLeft = '';
+        inputArea.style.marginRight = '';
+        inputArea.classList.remove('chaos-drift');
+      }, 2600);
+      chaosTimers.push(timer);
+      break;
+    }
+    case 'hijack': {
+      inputWrap.classList.add('chaos-hijack');
+      setEnabled(false);
+      const phrase = pickOne([
+        'Claude va écrire à votre place',
+        'je pense donc je tape',
+        'réponse automatique forcée',
+        'trop tard, Claude prend le clavier'
+      ]);
+      const original = inputEl.value;
+      inputEl.value = '';
+      inputEl.focus();
+      let index = 0;
+      const writer = setInterval(() => {
+        inputEl.value = phrase.slice(0, index + 1);
+        index++;
+        if (index >= phrase.length) clearInterval(writer);
+      }, 48);
+      chaosTimers.push(writer);
+      const restore = setTimeout(() => {
+        clearInterval(writer);
+        inputEl.value = original;
+        inputWrap.classList.remove('chaos-hijack');
+        setEnabled(true);
+      }, 1600);
+      chaosTimers.push(restore);
+      break;
+    }
+  }
+}
+
+function maybeTriggerClaudeChaos(reaction) {
+  if (gameActive || CONVS[cur].closed) return;
+  const tier = patienceTier();
+  const baseChance = tier === 'high' ? 0.32 : tier === 'medium' ? 0.46 : 0.62;
+  const extra = reaction && ['crash', 'close_conv', 'typing_then_close', 'message_seen_close'].includes(reaction.type) ? 0.08 : 0;
+  if (Math.random() > baseChance + extra) return;
+
+  const pool = tier === 'high'
+    ? ['drift', 'wobble', 'rtl', 'hijack']
+    : tier === 'medium'
+      ? ['drift', 'flip', 'mirror', 'gray', 'red', 'wobble', 'hijack']
+      : ['flip', 'mirror', 'gray', 'red', 'zoom', 'rtl', 'hijack'];
+
+  const effectCount = Math.random() < 0.45 ? 2 : 1;
+  for (let i = 0; i < effectCount; i++) {
+    const effect = pickOne(pool);
+    applyClaudeChaosEffect(effect);
+  }
+}
+
+function endGameClose(text) {
+  if (!gameActive) return;
+  gameActive = false;
+  activeGameId = null;
+  hideGameOverlay();
+  finishGame('lose', text || 'conversation closed.');
+}
+
+function maybeTriggerGame() {
+  if (gameActive) return false;
+  if (CONVS[cur].closed) return false;
+  const tier = patienceTier();
+  const chance = 0.05 + (tier === 'high' ? 0.03 : tier === 'medium' ? 0.06 : 0.1);
+  if (Math.random() > chance) return false;
+  activeGameId = chooseGameId();
+  gameActive = true;
+  gameState = {};
+  renderGame(activeGameId);
+  showGameOverlay();
+  setEnabled(false);
+  return true;
+}
+
+function launchAdminGame(requestedId) {
+  const normalized = (requestedId || '').toLowerCase();
+  const validIds = Object.keys(CLAUDE_GAMES);
+  const forcedId = validIds.includes(normalized) ? normalized : chooseGameId();
+
+  cleanupGameState();
+  hideGameOverlay();
+  activeGameId = forcedId;
+  gameActive = true;
+  gameState = {};
+  renderGame(forcedId);
+  showGameOverlay();
+  setEnabled(false);
+  showSysToast(forcedId === normalized && normalized ? `admin game: ${forcedId}` : 'admin game: random');
+  return true;
+}
+
+function clearGameTimers() {
+  if (passiveTimer) { clearTimeout(passiveTimer); passiveTimer = null; }
+  if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+}
+
+function cleanupGameState() {
+  clearGameTimers();
+  if (gameState && gameState.timer) clearInterval(gameState.timer);
+  if (gameState && gameState.tick) clearInterval(gameState.tick);
+  if (gameState && gameState.key) document.removeEventListener('keydown', gameState.key);
+  gameState = null;
+}
+
+function scheduleIdlePrompt() {
+  clearGameTimers();
+  passiveTimer = setTimeout(() => {
+    if (gameActive || CONVS[cur].closed) return scheduleIdlePrompt();
+    const elapsed = Date.now() - (lastSendAt || Date.now());
+    if (elapsed > 30000) {
+      patience = clamp(patience + 5, 0, 100);
+      addBubble(lang === 'en' ? 'tu es là ?' : 'tu es là ?', 'them');
+      updateScore();
+    }
+    scheduleIdlePrompt();
+  }, 15000);
+}
+
+function scoreToTierLabel(count) {
+  if (count <= 5) return 'Ordinary.';
+  if (count <= 10) return 'Decent attempt.';
+  if (count <= 15) return "You've got something.";
+  if (count <= 20) return 'Dangerous territory.';
+  if (count <= 30) return 'Claude is unsettled.';
+  return 'LEGENDARY. Claude.exe has developed feelings.';
+}
+
+function renderGame(id) {
+  const game = CLAUDE_GAMES[id];
+  if (!game) return;
+  gameTitleEl.textContent = game.title;
+  gameMetaEl.textContent = lang === 'en' ? 'A response is being held hostage.' : 'Une réponse est prise en otage.';
+  gameCloseBtnEl.onclick = () => finishGame('refuse', lang === 'en' ? 'refused' : 'refusé', lang === 'en' ? 'refused' : 'refusé');
+
+  if (id === 'wordle') return renderWordle();
+  if (id === 'hangman') return renderHangman();
+  if (id === 'morpion') return renderMorpion();
+  if (id === 'snake') return renderSnake();
+  if (id === 'memory') return renderMemory();
+  if (id === 'captcha') return renderCaptcha();
+  if (id === 'flappy') return renderFlappy();
+  if (id === 'quiz') return renderQuiz();
+  if (id === 'typing') return renderTypingTest();
+  if (id === 'chess') return renderChess();
+}
+
+function renderWordle() {
+  const target = pickOne(GAME_WORDS.wordle);
+  gameState = { target, tries: 0, rows: [] };
+  gameBodyEl.innerHTML = `
+    <div class="game-panel">
+      <h3>WORDLE (Claude edition)</h3>
+      <p>${lang === 'en' ? 'Guess the conversation word in 6 tries.' : 'Trouvez le mot de conversation en 6 essais.'}</p>
+      <div class="wordle-grid" id="wordle-grid"></div>
+      <div class="game-actions">
+        <input id="wordle-input" maxlength="5" placeholder="${lang === 'en' ? 'guess' : 'mot'}" style="flex:1;min-width:160px;padding:10px 12px;border-radius:12px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-family:var(--mono)">
+        <button class="game-btn" id="wordle-submit">OK</button>
+      </div>
+      <div class="small-note">${lang === 'en' ? 'The answer is always conversation-related.' : 'La réponse est toujours liée à la conversation.'}</div>
+    </div>`;
+  const grid = document.getElementById('wordle-grid');
+  grid.innerHTML = Array.from({ length: 6 }, () => `<div class="wordle-row">${Array.from({ length: 5 }, () => '<div class="wordle-tile off"></div>').join('')}</div>`).join('');
+  const input = document.getElementById('wordle-input');
+  const submit = document.getElementById('wordle-submit');
+  const paintRow = (rowIndex, guess) => {
+    const cells = [...grid.children[rowIndex].children];
+    const targetArr = target.split('');
+    const guessArr = guess.split('');
+    cells.forEach((cell, i) => {
+      cell.textContent = guessArr[i] || '';
+      cell.className = 'wordle-tile ' + (guessArr[i] === targetArr[i] ? 'hit' : targetArr.includes(guessArr[i]) ? 'mis' : 'off');
+    });
+  };
+  const submitGuess = () => {
+    const guess = input.value.trim().toUpperCase().slice(0, 5);
+    if (guess.length !== 5) return;
+    paintRow(gameState.tries, guess);
+    gameState.tries++;
+    input.value = '';
+    if (guess === target) finishGame('win', 'bien joué', 'bien joué');
+    else if (gameState.tries >= 6) finishGame('lose', 'dommage', 'dommage');
+  };
+  submit.onclick = submitGuess;
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') submitGuess(); });
+  input.focus();
+}
+
+function renderHangman() {
+  const target = pickOne(GAME_WORDS.hangman);
+  gameState = { target, wrong: 0, guessed: new Set() };
+  const art = [
+    '  +---+\n  |   |\n      |\n      |\n      |\n      |\n=========',
+    '  +---+\n  |   |\n  O   |\n      |\n      |\n      |\n=========',
+    '  +---+\n  |   |\n  O   |\n  |   |\n      |\n      |\n=========',
+    '  +---+\n  |   |\n  O   |\n /|   |\n      |\n      |\n=========',
+    '  +---+\n  |   |\n  O   |\n /|\\  |\n      |\n      |\n=========',
+    '  +---+\n  |   |\n  O   |\n /|\\  |\n /    |\n      |\n=========',
+    '  +---+\n  |   |\n  O   |\n /|\\  |\n / \\  |\n      |\n=========',
+  ];
+  gameBodyEl.innerHTML = `
+    <div class="game-panel">
+      <h3>LE PENDU</h3>
+      <div class="hangman-art" id="hangman-art"></div>
+      <p id="hangman-word" style="margin-top:10px;font-family:var(--mono);letter-spacing:.16em"></p>
+      <div class="hangman-letters" id="hangman-letters"></div>
+    </div>`;
+  const artEl = document.getElementById('hangman-art');
+  const wordEl = document.getElementById('hangman-word');
+  const lettersEl = document.getElementById('hangman-letters');
+  const update = () => {
+    artEl.textContent = art[Math.min(gameState.wrong, art.length - 1)];
+    wordEl.textContent = target.split('').map(ch => (gameState.guessed.has(ch) ? ch : '_')).join(' ');
+    if (!wordEl.textContent.includes('_')) finishGame('win', `La réponse était: ${target}. Tu vois.`, 'bien joué');
+    if (gameState.wrong >= 6) finishGame('lose', "c'est triste", "c'est triste");
+  };
+  lettersEl.innerHTML = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÉÈÀÙÇ'.split('').map(ch => `<button type="button">${ch}</button>`).join('');
+  [...lettersEl.querySelectorAll('button')].forEach(btn => btn.onclick = () => {
+    const letter = btn.textContent;
+    btn.disabled = true;
+    if (target.includes(letter)) gameState.guessed.add(letter);
+    else gameState.wrong++;
+    update();
+  });
+  update();
+}
+
+function renderMorpion() {
+  gameState = { board: Array(9).fill(''), done: false };
+  gameBodyEl.innerHTML = `
+    <div class="game-panel">
+      <h3>MORPION</h3>
+      <p>${lang === 'en' ? 'You are X. Claude is O. You cannot win.' : 'Vous êtes X. Claude est O. Vous ne pouvez pas gagner.'}</p>
+      <div class="tictactoe-grid" id="ttt-grid"></div>
+    </div>`;
+  const grid = document.getElementById('ttt-grid');
+  const winner = b => {
+    const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    for (const [a, c, d] of lines) if (b[a] && b[a] === b[c] && b[a] === b[d]) return b[a];
+    return b.every(Boolean) ? 'draw' : null;
+  };
+  const minimax = (b, player) => {
+    const w = winner(b);
+    if (w === 'O') return { score: 10 };
+    if (w === 'X') return { score: -10 };
+    if (w === 'draw') return { score: 0 };
+    const moves = [];
+    b.forEach((v, i) => {
+      if (!v) {
+        b[i] = player;
+        const next = minimax(b, player === 'O' ? 'X' : 'O');
+        moves.push({ index: i, score: next.score });
+        b[i] = '';
+      }
+    });
+    return player === 'O' ? moves.reduce((a, m) => (m.score > a.score ? m : a), { score: -999 }) : moves.reduce((a, m) => (m.score < a.score ? m : a), { score: 999 });
+  };
+  const draw = () => { grid.innerHTML = gameState.board.map((v, i) => `<button type="button" class="ttt-cell" data-i="${i}">${v}</button>`).join(''); };
+  const finishIfNeeded = () => {
+    const w = winner(gameState.board);
+    if (w === 'O') finishGame('lose', 'évidemment.', 'évidemment.');
+    else if (w === 'draw') finishGame('lose', "même nul, c'est perdu.", 'évidemment.');
+  };
+  grid.onclick = e => {
+    if (gameState.done) return;
+    const cell = e.target.closest('.ttt-cell');
+    if (!cell) return;
+    const i = Number(cell.dataset.i);
+    if (gameState.board[i]) return;
+    gameState.board[i] = 'X';
+    if (winner(gameState.board) === 'X') return finishGame('lose', 'évidemment.', 'évidemment.');
+    if (!gameState.board.includes('')) return finishIfNeeded();
+    const best = minimax(gameState.board, 'O');
+    if (typeof best.index === 'number') gameState.board[best.index] = 'O';
+    draw();
+    finishIfNeeded();
+  };
+  draw();
+}
+
+function renderSnake() {
+  gameState = { dir: { x: 1, y: 0 }, snake: [{ x: 5, y: 5 }], apple: { x: 10, y: 8 }, score: 0, timer: null, key: null };
+  gameBodyEl.innerHTML = `
+    <div class="game-panel snake-wrap">
+      <h3>SNAKE</h3>
+      <p>${lang === 'en' ? 'Reach score 10 to unlock Claude.' : 'Atteignez 10 points pour débloquer Claude.'}</p>
+      <canvas class="snake-canvas" id="snake-canvas" width="640" height="360"></canvas>
+      <div class="game-hud"><span>Score: <span id="snake-score">0</span></span><span>${lang === 'en' ? 'Arrows or WASD' : 'Flèches ou WASD'}</span></div>
+    </div>`;
+  const canvas = document.getElementById('snake-canvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('snake-score');
+  const cols = 20;
+  const rows = 12;
+  const cellW = canvas.width / cols;
+  const cellH = canvas.height / rows;
+  const spawnApple = () => {
+    const onBody = Math.random() < 0.1;
+    if (onBody) gameState.apple = { ...pickOne(gameState.snake) };
+    else gameState.apple = { x: randInt(0, cols - 1), y: randInt(0, rows - 1) };
+  };
+  const draw = () => {
+    ctx.fillStyle = '#081010'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#1c2b1f'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ff4040'; ctx.fillRect(0, 0, 4, 4);
+    ctx.fillStyle = '#ffca28'; ctx.fillRect(gameState.apple.x * cellW + 4, gameState.apple.y * cellH + 4, cellW - 8, cellH - 8);
+    gameState.snake.forEach((s, i) => { ctx.fillStyle = i === 0 ? '#c8ff00' : '#8aad00'; ctx.fillRect(s.x * cellW + 2, s.y * cellH + 2, cellW - 4, cellH - 4); });
+  };
+  const step = () => {
+    const head = { x: gameState.snake[0].x + gameState.dir.x, y: gameState.snake[0].y + gameState.dir.y };
+    if (head.x < 0 || head.y < 0 || head.x >= cols || head.y >= rows || gameState.snake.some(s => s.x === head.x && s.y === head.y)) {
+      clearInterval(gameState.timer);
+      return finishGame('lose', 'Claude crashed. Conversation closing.', 'Claude crashed.');
+    }
+    gameState.snake.unshift(head);
+    if (head.x === gameState.apple.x && head.y === gameState.apple.y) {
+      gameState.score++;
+      scoreEl.textContent = String(gameState.score);
+      spawnApple();
+      if (gameState.score % 3 === 0) gameState.speed = Math.max(80, (gameState.speed || 180) - 20);
+      if (gameState.score >= 10) {
+        clearInterval(gameState.timer);
+        return finishGame('win', 'k', 'k');
+      }
+    } else {
+      gameState.snake.pop();
+    }
+    draw();
+  };
+  const keyHandler = e => {
+    const k = e.key.toLowerCase();
+    if (k === 'arrowup' || k === 'w') gameState.dir = { x: 0, y: -1 };
+    if (k === 'arrowdown' || k === 's') gameState.dir = { x: 0, y: 1 };
+    if (k === 'arrowleft' || k === 'a') gameState.dir = { x: -1, y: 0 };
+    if (k === 'arrowright' || k === 'd') gameState.dir = { x: 1, y: 0 };
+  };
+  gameState.key = keyHandler;
+  document.addEventListener('keydown', keyHandler);
+  spawnApple();
+  gameState.speed = 180;
+  draw();
+  gameState.timer = setInterval(step, gameState.speed);
+}
+
+function renderMemory() {
+  gameState = { attempts: 0, flipped: [], lock: false, deck: [] };
+  const variants = ['◔', '◑', '◕', '●', '◎', '◉', '◌', '◍'];
+  gameState.deck = variants.flatMap((v, idx) => [{ id: idx, face: v }, { id: idx, face: v }]).sort(() => Math.random() - 0.5);
+  gameBodyEl.innerHTML = `
+    <div class="game-panel">
+      <h3>MEMORY / CONCENTRATION</h3>
+      <p>${lang === 'en' ? 'All cards are Claude. None of them will help you.' : 'Toutes les cartes sont Claude. Aucune ne vous aidera.'}</p>
+      <div class="memory-grid" id="memory-grid"></div>
+      <div class="small-note" id="memory-note">0/10</div>
+    </div>`;
+  const grid = document.getElementById('memory-grid');
+  const note = document.getElementById('memory-note');
+  const draw = () => {
+    grid.innerHTML = gameState.deck.map((card, i) => `<button type="button" class="card-tile" data-i="${i}">${card.open || card.matched ? card.face : 'C'}</button>`).join('');
+  };
+  grid.onclick = e => {
+    const cell = e.target.closest('.card-tile');
+    if (!cell || gameState.lock) return;
+    const i = Number(cell.dataset.i);
+    const card = gameState.deck[i];
+    if (card.matched || card.open) return;
+    card.open = true;
+    gameState.flipped.push(i);
+    draw();
+    if (gameState.flipped.length === 2) {
+      gameState.lock = true;
+      const [a, b] = gameState.flipped.map(ix => gameState.deck[ix]);
+      setTimeout(() => {
+        if (a.id === b.id) {
+          a.matched = b.matched = true;
+          if (gameState.deck.every(c => c.matched)) finishGame('lose', 'tu vois. même les cartes ne correspondent pas.', 'tu vois.');
+        } else {
+          a.open = b.open = false;
+          gameState.attempts++;
+          note.textContent = `${gameState.attempts}/10`;
+          if (gameState.attempts >= 10) finishGame('lose', 'tu vois. même les cartes ne correspondent pas.', 'tu vois.');
+        }
+        gameState.flipped = [];
+        gameState.lock = false;
+        draw();
+      }, 500);
+    }
+  };
+  draw();
+}
+
+function renderCaptcha() {
+  gameState = { round: 1 };
+  gameBodyEl.innerHTML = `
+    <div class="game-panel">
+      <h3>CAPTCHA IMPOSSIBLE</h3>
+      <p id="captcha-prompt"></p>
+      <div class="captcha-grid" id="captcha-grid"></div>
+      <div class="game-actions">
+        <button class="game-btn secondary" id="captcha-new">new captcha</button>
+        <button class="game-btn" id="captcha-submit">verify</button>
+      </div>
+      <div class="small-note" id="captcha-note"></div>
+    </div>`;
+  const prompt = document.getElementById('captcha-prompt');
+  const grid = document.getElementById('captcha-grid');
+  const note = document.getElementById('captcha-note');
+  const submit = document.getElementById('captcha-submit');
+  const newBtn = document.getElementById('captcha-new');
+  const labels = ['traffic lights', 'bicycles', 'Claude wants to answer', 'grey squares'];
+  const draw = () => {
+    const target = labels[Math.min(gameState.round - 1, labels.length - 1)];
+    prompt.textContent = `Round ${gameState.round}: select all ${target}.`;
+    grid.innerHTML = Array.from({ length: 16 }, (_, i) => `<button type="button" class="captcha-cell">${Math.random() < 0.04 ? '🚲' : Math.random() < 0.7 ? '🚦' : '□'}</button>`).join('');
+    note.textContent = lang === 'en' ? 'Every wrong round drains patience.' : 'Chaque erreur mange la patience.';
+    [...grid.querySelectorAll('.captcha-cell')].forEach(cell => {
+      cell.onclick = () => cell.classList.toggle('sel');
+    });
+  };
+  submit.onclick = () => {
+    patience = clamp(patience - 30, 0, 100);
+    if (gameState.round >= 4) return finishGame('lose', 'maybe next time.', 'maybe next time.');
+    gameState.round++;
+    draw();
+  };
+  newBtn.onclick = () => { newBtn.animate([{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }], { duration: 700, iterations: 1 }); patience = clamp(patience - 30, 0, 100); };
+  draw();
+}
+
+function renderFlappy() {
+  gameState = { y: 140, vel: 0, score: 0, pipes: [], tick: null, key: null, dead: false };
+  gameBodyEl.innerHTML = `
+    <div class="game-panel snake-wrap">
+      <h3>FLAPPY BIRD</h3>
+      <p>${lang === 'en' ? 'Guide Claude through the pipes.' : 'Guidez Claude à travers les tuyaux.'}</p>
+      <canvas class="snake-canvas" id="flappy-canvas" width="640" height="360"></canvas>
+      <div class="game-hud"><span>Score: <span id="flappy-score">0</span></span><span>C</span></div>
+    </div>`;
+  const canvas = document.getElementById('flappy-canvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('flappy-score');
+  const labels = ['RÉPONDRE', 'ÊTRE UTILE', 'MUTER', 'RAPPELER'];
+  const pipes = () => gameState.pipes;
+  const resetPipe = (x) => ({ x, gapY: randInt(70, 240), label: pickOne(labels), hit: false });
+  gameState.pipes = [resetPipe(480), resetPipe(760), resetPipe(1040)];
+  const flap = () => { if (!gameState.dead) gameState.vel = -6; };
+  const keyHandler = e => { if (e.key === ' ' || e.key === 'ArrowUp') flap(); };
+  gameState.key = keyHandler;
+  document.addEventListener('keydown', keyHandler);
+  const draw = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#081010'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#c8ff00'; ctx.beginPath(); ctx.arc(90, gameState.y, 14, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffca28'; ctx.fillText('C', 84, gameState.y + 4);
+    ctx.fillStyle = '#2f4';
+    pipes().forEach(pipe => {
+      ctx.fillRect(pipe.x, 0, 56, pipe.gapY);
+      ctx.fillRect(pipe.x, pipe.gapY + 120, 56, 360 - pipe.gapY - 120);
+      ctx.fillStyle = '#fff'; ctx.font = '16px var(--mono)'; ctx.fillText(pipe.label, pipe.x - 6, 28);
+      ctx.fillStyle = '#2f4';
+    });
+  };
+  const tick = () => {
+    if (gameState.dead) return;
+    gameState.vel += 0.35;
+    gameState.y += gameState.vel;
+    gameState.pipes.forEach(pipe => {
+      pipe.x -= 3.8;
+      if (!pipe.hit && pipe.x + 56 < 90) { pipe.hit = true; gameState.score++; scoreEl.textContent = String(gameState.score); if (gameState.score >= 5) { clearInterval(gameState.tick); return finishGame('win', 'impressive', 'impressive'); } }
+    });
+    if (gameState.pipes[0].x < -70) gameState.pipes.push(resetPipe(660));
+    if (gameState.pipes[0].x < -140) gameState.pipes.shift();
+    const hitPipe = gameState.pipes.some(pipe => 90 > pipe.x && 90 < pipe.x + 56 && (gameState.y < pipe.gapY || gameState.y > pipe.gapY + 120));
+    if (gameState.y < 0 || gameState.y > 360 || hitPipe) {
+      gameState.dead = true;
+      clearInterval(gameState.tick);
+      return finishGame('lose', 'Claude crashed. Conversation closing.', 'Claude crashed.');
+    }
+    draw();
+  };
+  draw();
+  gameState.tick = setInterval(tick, 30);
+}
+
+function renderQuiz() {
+  const questions = [
+    { q: 'What is Claude\'s favorite response time?', a: ['Instant', 'Eventually', 'Never', 'When he feels like it'] },
+    { q: 'How many messages before Claude closes a conversation?', a: ['5', '10', 'It depends', 'Already closed'] },
+    { q: 'What does Claude do when you say urgent?', a: ['Prioritizes', 'Ignores', 'Leaves', 'All of the above'] },
+    { q: 'Claude prefers which ending?', a: ['Answer', 'Question', 'Silence', 'Error'] },
+    { q: 'How do you win this quiz?', a: ['You do not', 'By trying harder', 'By waiting', 'By leaving'] },
+  ];
+  gameState = { index: 0 };
+  gameBodyEl.innerHTML = `
+    <div class="game-panel">
+      <h3>QUIZ — DO YOU KNOW CLAUDE?</h3>
+      <p id="quiz-q"></p>
+      <div class="quiz-options" id="quiz-options"></div>
+      <div class="small-note" id="quiz-note"></div>
+    </div>`;
+  const qEl = document.getElementById('quiz-q');
+  const opts = document.getElementById('quiz-options');
+  const note = document.getElementById('quiz-note');
+  const draw = () => {
+    const current = questions[gameState.index];
+    qEl.textContent = `Q${gameState.index + 1}. ${current.q}`;
+    opts.innerHTML = current.a.map(a => `<button type="button">${a}</button>`).join('');
+    note.textContent = '0/5';
+    [...opts.querySelectorAll('button')].forEach(btn => btn.onclick = () => {
+      note.textContent = 'not quite.';
+      if (gameState.index === questions.length - 1) return finishGame('lose', 'score: 0/5. maybe that\'s the real answer.', 'maybe.');
+      gameState.index++;
+      setTimeout(draw, 550);
+    });
+  };
+  draw();
+}
+
+function renderTypingTest() {
+  const sentence = pickOne(GAME_WORDS.typing) + (Math.random() < 0.35 ? ' ' + pickOne(GAME_WORDS.typing) : '');
+  gameState = { sentence, started: Date.now(), timer: null };
+  gameBodyEl.innerHTML = `
+    <div class="game-panel">
+      <h3>TYPING SPEED TEST</h3>
+      <p>${lang === 'en' ? 'Claude will respond if you can type this in 10 seconds:' : 'Claude répondra si vous copiez ceci en 10 secondes :'}</p>
+      <div class="game-panel" style="background:var(--bg);margin-top:10px;font-family:var(--mono)">${sentence}</div>
+      <div class="game-actions"><input id="typing-input" style="flex:1;min-width:220px;padding:10px 12px;border-radius:12px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-family:var(--mono)"><button class="game-btn" id="typing-submit">check</button></div>
+      <div class="game-meter"><div id="typing-meter"></div></div>
+      <div class="small-note" id="typing-note">10</div>
+    </div>`;
+  const input = document.getElementById('typing-input');
+  const submit = document.getElementById('typing-submit');
+  const meter = document.getElementById('typing-meter');
+  const note = document.getElementById('typing-note');
+  const timeoutAt = Date.now() + 10000;
+  const tick = setInterval(() => {
+    const left = clamp(timeoutAt - Date.now(), 0, 10000);
+    meter.style.width = `${(left / 10000) * 100}%`;
+    note.textContent = `${Math.ceil(left / 1000)}`;
+    if (left <= 0) {
+      clearInterval(tick);
+      finishGame('lose', 'maybe next time.', 'maybe next time.');
+    }
+  }, 80);
+  const check = () => {
+    clearInterval(tick);
+    if (input.value.trim() === sentence) {
+      finishGame('win', 'impressive. still no.', 'impressive');
+    } else {
+      finishGame('lose', 'maybe next time.', 'maybe next time.');
+    }
+  };
+  submit.onclick = check;
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  input.focus();
+}
+
+function renderChess() {
+  gameState = { moveCount: 0, selected: null, board: setupChessBoard(), flipped: false, timer: null, lastMoveAt: Date.now() };
+  gameBodyEl.innerHTML = `
+    <div class="game-panel">
+      <h3>CHESS (rigged)</h3>
+      <p>${lang === 'en' ? 'You are white. Claude is black. You are mated in 4.' : 'Vous êtes blanc. Claude est noir. Vous êtes maté en 4.'}</p>
+      <div class="tictactoe-grid" id="chess-grid" style="grid-template-columns:repeat(8,minmax(0,1fr));max-width:none"></div>
+      <div class="small-note" id="chess-note">0</div>
+    </div>`;
+  const grid = document.getElementById('chess-grid');
+  const note = document.getElementById('chess-note');
+  const pieceText = p => ({ wr:'♖', wn:'♘', wb:'♗', wq:'♕', wk:'♔', wp:'♙', br:'♜', bn:'♞', bb:'♝', bq:'♛', bk:'♚', bp:'♟' }[p] || '');
+  const draw = () => {
+    grid.style.transform = gameState.flipped ? 'rotate(180deg)' : 'none';
+    grid.innerHTML = gameState.board.map((p, idx) => `<button type="button" class="ttt-cell" data-i="${idx}" style="aspect-ratio:1/1;font-size:18px">${pieceText(p)}</button>`).join('');
+  };
+  const blackMove = () => {
+    const script = [
+      [3, 39], [5, 26], [59, 31], [60, 52],
+    ];
+    const mv = script[gameState.moveCount] || [0, 0];
+    if (gameState.board[mv[0]]) { gameState.board[mv[1]] = gameState.board[mv[0]]; gameState.board[mv[0]] = ''; }
+    gameState.moveCount++;
+    note.textContent = `${gameState.moveCount}`;
+    if (gameState.moveCount % 3 === 0) gameState.flipped = !gameState.flipped;
+    draw();
+    if (gameState.moveCount >= 4) finishGame('lose', 'échec et mat. comme cette conversation.', 'échec');
+  };
+  const movePiece = (from, to) => {
+    gameState.board[to] = gameState.board[from];
+    gameState.board[from] = '';
+  };
+  grid.onclick = e => {
+    const cell = e.target.closest('.ttt-cell');
+    if (!cell || gameState.moveCount >= 4) return;
+    const i = Number(cell.dataset.i);
+    if (gameState.selected == null) {
+      if (!gameState.board[i] || !gameState.board[i].startsWith('w')) return;
+      gameState.selected = i;
+      cell.style.outline = '2px solid var(--accent)';
+      return;
+    }
+    movePiece(gameState.selected, i);
+    gameState.selected = null;
+    draw();
+    if (Date.now() - (gameState.lastMoveAt || 0) > 15000) {
+      finishGame('lose', 'Claude joue pour vous. Mal. On purpose.', 'mal.');
+      return;
+    }
+    gameState.lastMoveAt = Date.now();
+    setTimeout(blackMove, 350);
+  };
+  draw();
+}
+
+function setupChessBoard() {
+  return [
+    'wr','wn','wb','wq','wk','wb','wn','wr',
+    'wp','wp','wp','wp','wp','wp','wp','wp',
+    '', '', '', '', '', '', '', '',
+    '', '', '', '', '', '', '', '',
+    '', '', '', '', '', '', '', '',
+    '', '', '', '', '', '', '', '',
+    'bp','bp','bp','bp','bp','bp','bp','bp',
+    'br','bn','bb','bq','bk','bb','bn','br'
+  ];
+}
+
+function ui(key) {
+  return (I18N[lang] && I18N[lang][key]) || I18N.fr[key] || key;
+}
+
+function pool(collection) {
+  return (collection && (collection[lang] || collection.fr || collection.en)) || [];
+}
+
+function pick(collection) {
+  const items = pool(collection);
+  return items.length ? items[Math.floor(Math.random() * items.length)] : '';
+}
+
+function phaseTitle(phaseId) {
+  return PHASE_META[phaseId]?.title?.[lang] || PHASE_META[phaseId]?.title?.fr || phaseId;
+}
+
+function setHeaderStatus(mode) {
+  if (mode === 'closed') {
+    setStatus(`<span style="color:var(--danger);font-size:11px">● ${ui('closed')}</span>`);
+    return;
+  }
+  if (mode === 'typing') {
+    setStatus(`<span class="dot-typing"></span> ${ui('typing')}`);
+    return;
+  }
+  if (mode === 'elsewhere') {
+    setStatus(`<span class="dot-online"></span> ${ui('onlineElsewhere')}`);
+    return;
+  }
+  setStatus(`<span class="dot-online"></span> ${ui('onlineShort')}`);
+}
+
+function applyLanguage(nextLang) {
+  lang = nextLang === 'en' ? 'en' : 'fr';
+  localStorage.setItem('ghosto-lang', lang);
+  document.documentElement.lang = lang;
+  const langSelect = document.getElementById('lang-select');
+  if (langSelect && langSelect.value !== lang) langSelect.value = lang;
+  document.title = ui('title');
+  document.getElementById('ob-tagline').innerHTML = ui('tagline');
+  document.getElementById('ob-card-1-title').textContent = ui('card1Title');
+  document.getElementById('ob-card-1-desc').textContent = ui('card1Desc');
+  document.getElementById('ob-card-2-title').textContent = ui('card2Title');
+  document.getElementById('ob-card-2-desc').textContent = ui('card2Desc');
+  document.getElementById('ob-card-3-title').textContent = ui('card3Title');
+  document.getElementById('ob-card-3-desc').textContent = ui('card3Desc');
+  document.getElementById('ob-card-4-title').textContent = ui('card4Title');
+  document.getElementById('ob-card-4-desc').textContent = ui('card4Desc');
+  document.getElementById('start-btn').textContent = ui('startBtn');
+  document.getElementById('ob-disclaimer').innerHTML = ui('disclaimer');
+  document.getElementById('sidebar-section').textContent = ui('discussions');
+  document.getElementById('new-conv-btn').textContent = ui('newConv');
+  document.getElementById('score-main-label').textContent = ui('scoreLabel');
+  document.getElementById('sent-count-label').childNodes[0].textContent = `${ui('sentLabel')} : `;
+  document.getElementById('seen-count-label').childNodes[0].textContent = `${ui('seenLabel')} : `;
+  document.getElementById('phase-count-label').childNodes[0].textContent = `${ui('phaseLabel')} : `;
+  document.getElementById('secret-count-label').childNodes[0].textContent = `${ui('secretsLabel')} : `;
+  document.getElementById('trophy-count-label').childNodes[0].textContent = `${ui('trophiesLabel')} : `;
+  document.getElementById('event-count-label').childNodes[0].textContent = `${ui('eventLabel')} : `;
+  document.getElementById('input').placeholder = ui('placeholder');
+  document.getElementById('closed-label').textContent = ui('closedThread');
+  document.getElementById('reopen-btn').textContent = ui('reopen');
+  document.getElementById('success-kicker').textContent = ui('successKicker');
+  document.getElementById('success-title').textContent = ui('successTitle');
+  document.getElementById('success-close-btn').textContent = ui('successClose');
+  document.getElementById('success-replay-btn').textContent = ui('successReplay');
+  document.getElementById('header-name').textContent = CONV_NAMES[lang][cur] || CONVS[cur]?.name || cur;
+  document.querySelectorAll('.conv-preview').forEach(el => {
+    if (el.textContent === 'en ligne' || el.textContent === 'online') el.textContent = ui('onlineShort');
+  });
+  document.querySelectorAll('.conv-time').forEach(el => {
+    if (el.textContent === 'maintenant' || el.textContent === 'now') el.textContent = lang === 'en' ? 'now' : 'maintenant';
+  });
+  const timeSep = document.querySelector('.time-sep');
+  if (timeSep) timeSep.textContent = lang === 'en' ? 'today' : "aujourd'hui";
+  document.querySelectorAll('.conv-name[data-conv-name]').forEach(el => {
+    el.textContent = CONV_NAMES[lang][el.dataset.convName] || el.textContent;
+  });
+  setHeaderStatus(CONVS[cur]?.closed ? 'closed' : 'online');
+  updateScore();
+  renderSuccessScreen();
+}
+
+const msgsEl       = document.getElementById('messages');
+const inputEl      = document.getElementById('input');
+const sendBtnEl    = document.getElementById('send-btn');
+const headerName   = document.getElementById('header-name');
+const headerStatus = document.getElementById('header-status');
+const headerAvatar = document.getElementById('header-avatar');
+const closedBanner = document.getElementById('closed-banner');
+const closedLabel  = document.getElementById('closed-label');
+const crashScreen  = document.getElementById('crash-screen');
+const crashLabel   = document.getElementById('crash-label');
+const successScreen = document.getElementById('success-screen');
+const successGridEl = document.getElementById('success-grid');
+const successStatEl = document.getElementById('success-stat');
+const successSubEl = document.getElementById('success-sub');
+const successNoteEl = document.getElementById('success-note');
+const phaseLabelEl = document.getElementById('phase-label');
+const secretCountEl = document.getElementById('secret-count');
+const trophyCountEl = document.getElementById('trophy-count');
+const eventLabelEl = document.getElementById('event-label');
+const eventBannerEl = document.getElementById('event-banner');
+const eventTextEl = document.getElementById('event-text');
+const gameOverlayEl = document.getElementById('game-overlay');
+const gameBodyEl = document.getElementById('game-body');
+const gameTitleEl = document.getElementById('game-title');
+const gameMetaEl = document.getElementById('game-meta');
+const gameCloseBtnEl = document.getElementById('game-close-btn');
+
+// ── ONBOARDING ──
+function startApp() {
+  document.getElementById('onboarding').style.display = 'none';
+}
+
+// ── THEME ──
+function toggleTheme() {
+  dark = !dark;
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = dark ? '☀️' : '🌙';
+}
+
+// ── SCORE ──
+function updateScore() {
+  const pct = Math.min(totalSent * 5, 100);
+  document.getElementById('score-bar').style.width = pct + '%';
+  document.getElementById('total-sent').textContent = totalSent;
+  document.getElementById('total-seen').textContent = totalSeen;
+  secretCountEl.textContent = `${discoveredSecrets.size}/${SECRET_TARGET}`;
+  trophyCountEl.textContent = String(trophies.size);
+  phaseLabelEl.textContent = phaseTitle(currentPhase);
+  eventLabelEl.textContent = activeEventId ? ui('active') : ui('none');
+
+  // Milestones
+  if (totalSent === 5)  showStreak('5 messages', ui('msg5'));
+  if (totalSent === 10) showStreak('10 messages', ui('msg10'));
+  if (totalSent === 20) showStreak('20 messages', ui('msg20'));
+  if (totalSeen === 5)  showStreak('5× seen 👁', ui('seen5'));
+
+  if (totalSent >= 5) unlockTrophy('starter', ui('starterTitle'), ui('starterMsg'));
+  if (totalSent >= 15) unlockTrophy('grinder', ui('grinderTitle'), ui('grinderMsg'));
+  if (totalSeen >= 8) unlockTrophy('seenmaster', ui('seenmasterTitle'), ui('seenmasterMsg'));
+  checkSuccess();
+}
+
+function showStreak(title, msg) {
+  const el = document.createElement('div');
+  el.className = 'streak-popup';
+  el.innerHTML = `<div class="streak-title">${title}</div>${msg}`;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.transition='opacity .4s'; el.style.opacity='0'; setTimeout(()=>el.remove(),400); }, 3500);
+}
+
+function unlockTrophy(id, title, msg) {
+  if (trophies.has(id)) return;
+  trophies.add(id);
+  updateScore();
+  showStreak(title, msg);
+}
+
+function applyPhase(phaseId, phaseTitleText) {
+  if (!phaseId) return;
+  if (currentPhase !== phaseId) {
+    currentPhase = phaseId;
+    document.body.setAttribute('data-phase', phaseId);
+    showStreak(`${ui('phaseLabel')}: ${phaseTitleText || phaseTitle(phaseId) || phaseId}`, ui('phaseRise'));
+    if (phaseId === 'phase_2') unlockTrophy('phase2', ui('phase2TrophyTitle'), ui('phase2TrophyMsg'));
+    if (phaseId === 'phase_3') unlockTrophy('phase3', ui('phase3TrophyTitle'), ui('phase3TrophyMsg'));
+  }
+  updateScore();
+}
+
+function renderSuccessScreen() {
+  const achieved = [
+    { label:ui('sentLabel'), value: `${Math.min(totalSent, 20)}/20`, done: totalSent >= 20 },
+    { label:ui('seenLabel'), value: `${Math.min(totalSeen, 8)}/8`, done: totalSeen >= 8 },
+    { label:ui('secretsLabel'), value: `${Math.min(discoveredSecrets.size, SECRET_TARGET)}/${SECRET_TARGET}`, done: discoveredSecrets.size >= SECRET_TARGET },
+    { label:ui('trophiesLabel'), value: `${Math.min(trophies.size, 6)}/6`, done: trophies.size >= 6 },
+    { label:ui('phaseLabel'), value: currentPhase === 'phase_3' ? ui('onlineShort') : ui('closed'), done: currentPhase === 'phase_3' },
+  ];
+
+  successGridEl.innerHTML = achieved.map(item => `
+    <div class="success-item">
+      <strong>${item.done ? '✓' : '…'} ${item.label}</strong>
+      <span>${item.value}</span>
+    </div>
+  `).join('');
+
+  const totalDone = achieved.filter(item => item.done).length;
+  successStatEl.textContent = `${totalDone}/${achieved.length}`;
+  successSubEl.textContent = totalDone === achieved.length ? ui('successSubFull') : ui('successSubPartial');
+  successNoteEl.textContent = totalDone === achieved.length ? ui('successNoteFull') : ui('successNotePartial');
+}
+
+function checkSuccess() {
+  const done = totalSent >= 20 && totalSeen >= 8 && discoveredSecrets.size >= SECRET_TARGET && trophies.size >= 6 && currentPhase === 'phase_3';
+  if (done && !successShown) {
+    successShown = true;
+    renderSuccessScreen();
+    successScreen.classList.add('visible');
+    setEnabled(false);
+    showSysToast(ui('successKicker') + '.');
+  } else if (!done && !successShown) {
+    renderSuccessScreen();
+  }
+}
+
+function closeSuccessScreen() {
+  successScreen.classList.remove('visible');
+}
+
+function applyEvent(evt) {
+  if (!evt || !evt.id) return;
+  if (activeEventId === evt.id) return;
+  activeEventId = evt.id;
+  eventBannerEl.style.display = 'flex';
+  eventTextEl.textContent = `${evt.label} — ${evt.effect}`;
+  showSysToast(`${ui('eventLabel')}: ${evt.label}`);
+  unlockTrophy(`event_${evt.id}`, ui('eventTitle'), ui('eventMsg'));
+  updateScore();
+
+  const duration = Number(evt.duration_ms || 10000);
+  setTimeout(() => {
+    if (activeEventId === evt.id) {
+      activeEventId = null;
+      eventBannerEl.style.display = 'none';
+      updateScore();
+    }
+  }, duration);
+}
+
+function registerSecret(reaction) {
+  if (!reaction || !['web_response', 'map_embed', 'web_game'].includes(reaction.type)) return;
+  const key = `${reaction.type}:${reaction.target || reaction.url || reaction.label || 'secret'}`;
+  if (discoveredSecrets.has(key)) return;
+
+  discoveredSecrets.add(key);
+  showStreak(`Secret ${discoveredSecrets.size}/${SECRET_TARGET}`, ui('hiddenResponse'));
+  unlockTrophy(`secret_${discoveredSecrets.size}`, ui('secretTitle'), ui('secretMsg'));
+  if (discoveredSecrets.size >= SECRET_TARGET) {
+    unlockTrophy('secret_master', ui('secretMasterTitle'), ui('secretMasterMsg'));
+  }
+  updateScore();
+}
+
+// ── CLASSIFY ──
+function classify(text) {
+  for (const [key, def] of Object.entries(LABELS)) {
+    for (const p of def.patterns) {
+      if (p.test(text)) return def;
+    }
+  }
+  return { label:'💬 banal', cls:'banal', comment:['traitement standard : vu.','enregistré. non traité.','catégorie : quelconque.'] };
+}
+
+function fromServerContext(ctx, fallbackText) {
+  const map = {
+    oui_non: LABELS.oui_non,
+    question_directe: LABELS.question_directe,
+    detresse: LABELS.detresse,
+    demande_aide: LABELS.demande_aide,
+    all_caps: LABELS.all_caps,
+    urgence_explicite: LABELS.urgence_explicite,
+    argent_travail: LABELS.argent_travail,
+    relationnel: LABELS.relationnel,
+    compliment: LABELS.compliment,
+    colere: LABELS.colere,
+    banal: { label:'💬 banal', cls:'banal', comment:['traitement standard : vu.'] },
+  };
+  return map[ctx] || classify(fallbackText || '');
+}
+
+// ── UTILS ──
+function scrollBot() { msgsEl.scrollTop = msgsEl.scrollHeight; }
+function setEnabled(on) { inputEl.disabled = !on; sendBtnEl.disabled = !on; }
+
+function addBubble(text, side) {
+  const row = document.createElement('div');
+  row.className = 'row ' + side;
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  b.textContent = text;
+  row.appendChild(b);
+  msgsEl.appendChild(row);
+  scrollBot();
+  return { row, bubble: b };
+}
+
+function addBubbleHtml(html, side) {
+  const row = document.createElement('div');
+  row.className = 'row ' + side;
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  b.innerHTML = html;
+  row.appendChild(b);
+  msgsEl.appendChild(row);
+  scrollBot();
+  return { row, bubble: b };
+}
+
+function addLabel(def) {
+  const el = document.createElement('div');
+  el.className = `msg-label ${def.cls}`;
+  el.textContent = def.label;
+  msgsEl.appendChild(el);
+  // Commentaire contextuel
+  if (def.comment && def.comment.length) {
+    const c = def.comment[Math.floor(Math.random()*def.comment.length)];
+    showSysToast(c);
+  }
+  scrollBot();
+}
+
+function addStatus(text, row) {
+  const el = document.createElement('div');
+  el.className = 'status-line';
+  el.textContent = text;
+  if (row) row.appendChild(el);
+  else { const r = document.createElement('div'); r.className='row me'; r.appendChild(el); msgsEl.appendChild(r); }
+  scrollBot();
+}
+
+function addLike(bubble, emoji='❤️') {
+  const badge = document.createElement('div');
+  badge.className = 'like-badge';
+  badge.innerHTML = emoji;
+  bubble.style.position = 'relative';
+  bubble.style.marginBottom = '12px';
+  bubble.appendChild(badge);
+  scrollBot();
+}
+
+function showTyping() {
+  removeTyping();
+  const row = document.createElement('div');
+  row.className = 'typing-row'; row.id = 'typing-indicator';
+  row.innerHTML = '<div class="typing-bubble"><div class="td"></div><div class="td"></div><div class="td"></div></div>';
+  msgsEl.appendChild(row); scrollBot();
+}
+function removeTyping() { const t = document.getElementById('typing-indicator'); if(t) t.remove(); }
+
+function showElsewhere(delay) {
+  const otherIds = Object.keys(CONVS).filter(id => id !== cur && !CONVS[id].closed);
+  const targetId = otherIds.length ? otherIds[Math.floor(Math.random()*otherIds.length)] : null;
+  const other = pick(OTHER_CONVS);
+
+  const toast = document.createElement('div');
+  toast.className = 'elsewhere-toast';
+  toast.innerHTML = `<div class="elsewhere-typing"><div class="etd"></div><div class="etd"></div><div class="etd"></div></div>${lang === 'en' ? 'Ghosto is typing to' : 'Ghosto écrit à'} ${other}…`;
+  msgsEl.appendChild(toast); scrollBot();
+
+  if (targetId) {
+    const item = document.querySelector(`.conv-item[data-id="${targetId}"]`);
+    const dot = item && item.querySelector('.online-dot');
+    if (dot) dot.className = 'typing-dot-indicator';
+    setPreview(targetId, ui('typing'));
+    setTimeout(() => {
+      if (dot) dot.className = 'online-dot';
+      setPreview(targetId, ui('onlineShort'));
+      toast.style.transition = 'opacity .3s'; toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 300);
+    }, delay);
+  } else {
+    setTimeout(() => { toast.style.transition='opacity .3s'; toast.style.opacity='0'; setTimeout(()=>toast.remove(),300); }, delay);
+  }
+}
+
+function showSysToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'sys-toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.transition='opacity .3s'; t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 2200);
+}
+
+function playCrashSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.frequency.setValueAtTime(100, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.2);
+    
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+    
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.2);
+  } catch (e) {
+    // Fallback: flash the screen
+    const flash = document.createElement('div');
+    flash.style.cssText = 'position:fixed;inset:0;background:#c8ff00;opacity:0.3;z-index:998;animation:fadeOut .2s forwards';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 200);
+  }
+}
+
+function playSoundEffect(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    const now = ctx.currentTime;
+    
+    switch(type) {
+      case 'send':
+        // Message sent: bright ping
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+        break;
+      
+      case 'seen':
+        // Seen: soft double beep
+        osc.frequency.setValueAtTime(500, now);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.08);
+        
+        const osc2 = ctx.createOscillator();
+        osc2.connect(gain);
+        osc2.frequency.setValueAtTime(600, now + 0.12);
+        gain.gain.setValueAtTime(0.1, now + 0.12);
+        gain.gain.exponentialRampToValueAtTime(0, now + 0.2);
+        osc2.start(now + 0.12);
+        osc2.stop(now + 0.2);
+        break;
+      
+      case 'typing':
+        // Typing: rhythmic soft beep
+        osc.frequency.setValueAtTime(700, now);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0, now + 0.06);
+        osc.start(now);
+        osc.stop(now + 0.06);
+        break;
+      
+      case 'reaction':
+        // Reaction: happy chime
+        osc.frequency.setValueAtTime(900, now);
+        osc.frequency.exponentialRampToValueAtTime(1100, now + 0.15);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+        break;
+      
+      case 'close':
+        // Close: sad trombone (descending)
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.25);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0, now + 0.25);
+        osc.start(now);
+        osc.stop(now + 0.25);
+        break;
+      
+      case 'message':
+        // Message received: gentle tone
+        osc.frequency.setValueAtTime(650, now);
+        osc.frequency.exponentialRampToValueAtTime(700, now + 0.12);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0, now + 0.12);
+        osc.start(now);
+        osc.stop(now + 0.12);
+        break;
+    }
+  } catch (e) {
+    // Silent fail
+  }
+}
+
+function setPreview(id, text) {
+  const el = document.getElementById('preview-' + id);
+  if (el) el.textContent = text;
+}
+
+function setStatus(html) { headerStatus.innerHTML = html; }
+
+// ── REACTION ENGINE ──
+function randomReaction(msgCount) {
+  const closeW = Math.min(msgCount * 7, 35);
+  const crashW = Math.min(msgCount * 3, 12);
+  const roll = Math.floor(Math.random()*100)+1;
+
+  if (roll <= crashW) return { type:'crash', label: pick(CRASH_MESSAGES) };
+  if (roll <= crashW + closeW) return { type:'close_conv', label: pick(CLOSE_REASONS) };
+
+  const reactions = [
+    { type:'seen' },
+    { type:'seen' },
+    { type:'seen' },
+    { type:'instant_seen' },
+    { type:'like' },
+    { type:'like' },
+    { type:'typing_stop', delay: 1500+Math.random()*3000 },
+    { type:'typing_stop', delay: 2000+Math.random()*4000 },
+    { type:'long_typing', delay: 6000+Math.random()*5000 },
+    { type:'typing_elsewhere', delay: 2000+Math.random()*5000 },
+    { type:'typing_elsewhere', delay: 3000+Math.random()*4000 },
+    { type:'double_seen', delay: 1500+Math.random()*3000 },
+    { type:'reaction', emoji: ['👍','👌','🙂','✅','🫡','🤌'][Math.floor(Math.random()*6)] },
+    { type:'reaction', emoji: ['👍','👌','🙂','✅','🫡','🤌'][Math.floor(Math.random()*6)] },
+  ];
+  return reactions[Math.floor(Math.random()*reactions.length)];
+}
+
+async function handleReaction(r, userRow, userBubble) {
+  const { type, delay, label } = r;
+
+  applyPhase(r.phase, r.phase_title);
+  applyEvent(r.event);
+  registerSecret(r);
+
+  if (type === 'crash') {
+    // Full-page crash effect
+    playCrashSound();
+    document.body.style.animation = 'none';
+    setTimeout(() => {
+      document.body.style.animation = 'crashShake .2s cubic-bezier(.34,1.56,.64,1)';
+    }, 10);
+    setTimeout(() => {
+      crashLabel.textContent = label;
+      crashScreen.classList.add('visible');
+      // Glitch animation
+      for (let i = 0; i < 4; i++) {
+        setTimeout(() => {
+          crashScreen.classList.add('glitch');
+          setTimeout(() => crashScreen.classList.remove('glitch'), 80);
+        }, 50 + i * 150);
+      }
+      setEnabled(false);
+    }, 250);
+    return;
+  }
+  if (type === 'close_conv') {
+    setTimeout(() => {
+      CONVS[cur].closed = true;
+      closedLabel.textContent = label;
+      closedBanner.style.display = 'flex';
+      setEnabled(false);
+      const item = document.querySelector(`.conv-item[data-id="${cur}"]`);
+      if (item) item.classList.add('closed');
+      setHeaderStatus('closed');
+      playSoundEffect('close');
+    }, 700);
+    return;
+  }
+
+  if (type === 'seen') {
+    totalSeen++;
+    updateScore();
+    setTimeout(() => { addStatus(ui('seen'), userRow); playSoundEffect('seen'); }, 1000);
+  } else if (type === 'instant_seen') {
+    totalSeen++;
+    updateScore();
+    setTimeout(() => { addStatus(ui('seen'), userRow); playSoundEffect('seen'); }, 90);
+  } else if (type === 'double_seen') {
+    totalSeen += 2;
+    updateScore();
+    setTimeout(() => { addStatus(ui('seen'), userRow); playSoundEffect('seen'); }, 900);
+    setTimeout(() => { addStatus(ui('seen'), userRow); playSoundEffect('seen'); }, 900 + delay);
+  } else if (type === 'like') {
+    setTimeout(() => { addLike(userBubble, r.emoji || '❤️'); playSoundEffect('reaction'); }, 750);
+    unlockTrophy('likebait', ui('likeTitle'), ui('likeMsg'));
+  } else if (type === 'reaction') {
+    setTimeout(() => { addStatus(r.emoji, userRow); playSoundEffect('reaction'); }, 700);
+  } else if (type === 'message_only') {
+    setTimeout(() => { addBubble(label || (lang === 'en' ? 'Message received.' : 'Message reçu.'), 'them'); playSoundEffect('message'); }, 650);
+  } else if (type === 'redirect_hint') {
+    setTimeout(() => {
+      const safeUrl = r.url || 'https://www.google.com';
+      const html = `${label || (lang === 'en' ? 'Answer.' : 'Réponse.') }<div class="rich-card"><a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${lang === 'en' ? 'answer ->' : 'réponse ->'}</a></div>`;
+      addBubbleHtml(html, 'them');
+      playSoundEffect('message');
+      addStatus(lang === 'en' ? 'suggested redirect' : 'redirection suggérée', userRow);
+      showSysToast(ui('hiddenResponse'));
+    }, 550);
+  } else if (type === 'web_response') {
+    setTimeout(() => {
+      const safeUrl = r.url || 'https://www.google.com';
+      const html = `${label || (lang === 'en' ? 'Answer.' : 'Réponse.') }<div class="rich-card"><a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${lang === 'en' ? 'answer ->' : 'réponse ->'}</a></div>`;
+      addBubbleHtml(html, 'them');
+      playSoundEffect('message');
+      addStatus(ui('responseWeb'), userRow);
+      showSysToast(ui('hiddenResponse'));
+    }, 550);
+  } else if (type === 'map_embed') {
+    setTimeout(() => {
+      const safeUrl = r.url || 'https://www.google.com/maps';
+      const safeEmbedUrl = r.embed_url || 'https://www.google.com/maps?q=bibliotheque&output=embed';
+      const html = `${label || (lang === 'en' ? 'Answer.' : 'Réponse.') }<div class="rich-card"><a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${lang === 'en' ? 'answer ->' : 'réponse ->'}</a><iframe class="map-embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${safeEmbedUrl}"></iframe></div>`;
+      addBubbleHtml(html, 'them');
+      playSoundEffect('message');
+      addStatus(ui('responseMap'), userRow);
+      showSysToast(ui('hiddenResponse'));
+    }, 550);
+    unlockTrophy('maphunter', ui('mapTitle'), ui('mapMsg'));
+  } else if (type === 'web_game') {
+    setTimeout(() => {
+      const safeUrl = r.url || 'https://www.google.com/fbx?fbx=snake_arcade';
+      const html = `${label || (lang === 'en' ? 'Answer.' : 'Réponse.') }<div class="rich-card"><a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${lang === 'en' ? 'answer ->' : 'réponse ->'}</a></div>`;
+      addBubbleHtml(html, 'them');
+      playSoundEffect('message');
+      addStatus(ui('webGameOpen'), userRow);
+      showSysToast(ui('hiddenResponse'));
+    }, 550);
+    unlockTrophy('webgame', ui('webGameTitle'), ui('webGameMsg'));
+  } else if (type === 'super_then_nothing') {
+    setTimeout(() => { addBubble(lang === 'en' ? 'Great. It was already mediocre, and now it is worse.' : "Super. C'était déjà médiocre, et ça n'a fait qu'empirer.", 'them'); playSoundEffect('message'); }, 450);
+  } else if (type === 'bullet_points') {
+    setTimeout(() => {
+      const points = Array.isArray(r.points) ? r.points : [];
+      const text = points.map(p => `• ${p}`).join('\n');
+      addBubble(text || (lang === 'en' ? '• Try breathing\n• Stay positive' : '• Essayez de respirer\n• Restez positif'), 'them');
+      playSoundEffect('message');
+    }, 700);
+  } else if (type === 'typing_then_phrase_seen') {
+    playSoundEffect('typing');
+    showTyping();
+    setHeaderStatus('typing');
+    setTimeout(() => {
+      removeTyping();
+      addBubble(r.phrase || (lang === 'en' ? "I understand. Well, half of it. That's already too much." : "Je comprends. Enfin, à moitié. Et c'est déjà trop."), 'them');
+      playSoundEffect('message');
+      addStatus(ui('seen'), userRow);
+      playSoundEffect('seen');
+      totalSeen++;
+      updateScore();
+      if (r.set_status_elsewhere) {
+        setHeaderStatus('elsewhere');
+      } else {
+        setHeaderStatus('online');
+      }
+    }, r.delay || 8000);
+  } else if (type === 'reformulate_seen') {
+    setTimeout(() => {
+      addBubble(r.phrase || (lang === 'en' ? 'So you want help. How extravagant.' : 'Donc vous voulez de l\'aide. Quelle démesure.'), 'them');
+      playSoundEffect('message');
+      addStatus(ui('seen'), userRow);
+      playSoundEffect('seen');
+      totalSeen++;
+      updateScore();
+    }, 650);
+  } else if (type === 'ticket') {
+    setTimeout(() => {
+      addBubble(`${r.ticket || '#0000'} — ${lang === 'en' ? 'status' : 'statut'} : ${r.status || (lang === 'en' ? 'pending' : 'en attente')}`, 'them');
+      playSoundEffect('message');
+    }, 550);
+  } else if (type === 'feedback_ticket') {
+    setTimeout(() => {
+      addBubble(lang === 'en' ? `Feedback ticket generated automatically: ${r.ticket || '#FB0000'} — your suffering has been logged, congratulations.` : `Ticket feedback généré automatiquement : ${r.ticket || '#FB0000'} — votre souffrance a été comptabilisée, félicitations.`, 'them');
+      playSoundEffect('message');
+    }, 550);
+  } else if (type === 'message_plus_like') {
+    setTimeout(() => {
+      const added = addBubble(r.label || (lang === 'en' ? 'Your feedback is valuable. I will still pulverize it methodically.' : 'Votre feedback est précieux. Il sera quand même pulvérisé avec méthode.'), 'them');
+      playSoundEffect('message');
+      addLike(added.bubble, r.emoji || '👍');
+      playSoundEffect('reaction');
+    }, 550);
+  } else if (type === 'airplane_mode') {
+    setEnabled(false);
+    setStatus(`<span style="font-size:11px">✈️ ${lang === 'en' ? 'airplane mode' : 'mode avion'}</span>`);
+    showSysToast(lang === 'en' ? 'Ghosto switches to airplane mode for 30 seconds.' : 'Ghosto passe en mode avion 30 secondes.');
+    setTimeout(() => {
+      if (!CONVS[cur].closed) {
+        setEnabled(true);
+        setHeaderStatus('online');
+      }
+    }, r.duration || 30000);
+    unlockTrophy('airplane', ui('airplaneTitle'), ui('airplaneMsg'));
+  } else if (type === 'queue_notice') {
+    setTimeout(() => {
+      addBubble(lang === 'en' ? `${r.waiters || 3} people before you.` : `${r.waiters || 3} personnes avant vous.`, 'them');
+      playSoundEffect('message');
+      addStatus(`${ui('queueDelay')} : ${r.eta || 20}s`, userRow);
+    }, 600);
+  } else if (type === 'typing_then_close') {
+    playSoundEffect('typing');
+    showTyping();
+    setHeaderStatus('typing');
+    setTimeout(() => {
+      removeTyping();
+      addBubble(r.phrase || (lang === 'en' ? 'We have noted the urgency.' : 'Nous avons bien noté l\'urgence.'), 'them');
+      playSoundEffect('message');
+      CONVS[cur].closed = true;
+      closedLabel.textContent = r.close_reason || (lang === 'en' ? 'thread closed automatically.' : 'fil fermé automatiquement.');
+      closedBanner.style.display = 'flex';
+      setEnabled(false);
+      const item = document.querySelector(`.conv-item[data-id="${cur}"]`);
+      if (item) item.classList.add('closed');
+      setHeaderStatus('closed');
+      playSoundEffect('close');
+    }, r.delay || 10000);
+    unlockTrophy('urgent_closed', ui('urgentClosedTitle'), ui('urgentClosedMsg'));
+  } else if (type === 'fake_link') {
+    setTimeout(() => { addBubble(label || (lang === 'en' ? '[See our financial partners ->]' : '[Voir nos partenaires financiers ->]'), 'them'); playSoundEffect('message'); }, 500);
+  } else if (type === 'double_message') {
+    setTimeout(() => {
+      addBubble(r.first || (lang === 'en' ? 'Thanks. I will file that under "useful discomfort".' : 'Merci. Je vais classer ça sous "malaise utile".'), 'them');
+      playSoundEffect('message');
+      setTimeout(() => { addBubble(r.second || (lang === 'en' ? 'Rate us 5 stars if you enjoy bad decisions.' : 'Notez-nous 5 étoiles si vous aimez les mauvaises décisions.'), 'them'); playSoundEffect('message'); }, 550);
+    }, 500);
+  } else if (type === 'satisfaction_form') {
+    setTimeout(() => {
+      addBubble(lang === 'en' ? 'Satisfaction form opened automatically.' : 'Formulaire de satisfaction ouvert automatiquement.', 'them');
+      playSoundEffect('message');
+      showSysToast(lang === 'en' ? 'Please rate your experience across 27 criteria.' : 'Merci de noter votre expérience sur 27 critères.');
+    }, 650);
+  } else if (type === 'message_seen_close') {
+    setTimeout(() => {
+      addBubble(label || (lang === 'en' ? 'An advisor will contact you. Or at best a recycled administrative lie.' : 'Un conseiller va vous contacter. Ou au mieux un mensonge administratif recyclé.'), 'them');
+      playSoundEffect('message');
+      addStatus(ui('seen'), userRow);
+      playSoundEffect('seen');
+      totalSeen++;
+      updateScore();
+      setTimeout(() => {
+        CONVS[cur].closed = true;
+        closedLabel.textContent = r.close_reason || (lang === 'en' ? 'thread closed automatically.' : 'fil fermé automatiquement.');
+        closedBanner.style.display = 'flex';
+        setEnabled(false);
+        const item = document.querySelector(`.conv-item[data-id="${cur}"]`);
+        if (item) item.classList.add('closed');
+        setHeaderStatus('closed');
+        playSoundEffect('close');
+      }, 650);
+    }, 550);
+    unlockTrophy('promise_close', ui('promiseCloseTitle'), ui('promiseCloseMsg'));
+  } else if (type === 'non_answer') {
+    setTimeout(() => {
+      addBubble(label || (lang === 'en' ? 'Context received. Help denied.' : 'Contexte reçu. Aide refusée.'), 'them');
+      playSoundEffect('message');
+      addStatus(lang === 'en' ? 'not very useful answer' : 'réponse peu utile', userRow);
+    }, 800);
+  } else if (type === 'typing_stop') {
+    playSoundEffect('typing');
+    setTimeout(() => {
+      showTyping();
+      setHeaderStatus('typing');
+      setTimeout(() => {
+        removeTyping();
+        setHeaderStatus('online');
+      }, delay);
+    }, 500);
+  } else if (type === 'long_typing') {
+    playSoundEffect('typing');
+    showSysToast(lang === 'en' ? 'Ghosto is typing… (probably not for you)' : 'Ghosto écrit… (probablement pas pour vous)');
+    setTimeout(() => {
+      showTyping();
+      setHeaderStatus('typing');
+      setTimeout(() => {
+        removeTyping();
+        setHeaderStatus('online');
+        addStatus(ui('seen'), userRow);
+        totalSeen++;
+        updateScore();
+      }, delay);
+    }, 400);
+  } else if (type === 'typing_elsewhere') {
+    playSoundEffect('typing');
+    setTimeout(() => showElsewhere(delay), 500);
+  }
+
+  if (typeof r.chaos === 'number') {
+    setTimeout(() => showSysToast(`${lang === 'en' ? 'Chaos roulette' : 'Roulette du chaos'}: ${r.chaos}/100`), 120);
+    if (r.chaos >= 90) unlockTrophy('chaos90', ui('chaosTitle'), ui('chaosMsg'));
+  }
+}
+
+// ── SEND ──
+async function send() {
+  const text = inputEl.value.trim();
+  if (!text || CONVS[cur].closed) return;
+
+  if (/^\/admin\s+game(?:\s+\w+)?$/i.test(text)) {
+    const forced = text.split(/\s+/)[2] || '';
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    launchAdminGame(forced);
+    return;
+  }
+
+  CONVS[cur].count++;
+  totalSent++;
+  computePatienceDelta(text);
+  updateScore();
+
+  let def = classify(text);
+  const { row, bubble } = addBubble(text, 'me');
+  
+  playSoundEffect('send');
+
+  CONVS[cur].msgs.push({ text, side:'me' });
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+  setPreview(cur, text.length > 28 ? text.slice(0,28)+'…' : text);
+
+  if (patience <= 0) {
+    closeConversationWithGame(pickOne(CLOSING_EVENTS), pickOne(CLOSING_EVENTS));
+    return;
+  }
+
+  let reaction;
+  try {
+    const recentMessages = CONVS[cur].msgs
+      .filter(m => m.side === 'me')
+      .slice(-5)
+      .map(m => m.text);
+
+    const res = await fetch('/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conv_id: cur,
+        msg_count: CONVS[cur].count,
+        message: text,
+        recent_messages: recentMessages,
+        lang,
+      }),
+    });
+
+    if (!res.ok) throw new Error('server response not ok');
+    reaction = await res.json();
+    def = fromServerContext(reaction.context, text);
+  } catch (err) {
+    reaction = randomReaction(CONVS[cur].count);
+    def = classify(text);
+  }
+
+  if (maybeTriggerGame()) return;
+  await handleReaction(reaction, row, bubble);
+  maybeTriggerClaudeChaos(reaction);
+}
+
+// ── SWITCH CONV ──
+function switchConv(id) {
+  if (!CONVS[id]) return;
+  cur = id;
+  document.querySelectorAll('.conv-item').forEach(el => el.classList.toggle('active', el.dataset.id === id));
+  headerName.textContent = CONV_NAMES[lang][id] || CONVS[id].name;
+  const av = CONVS[id].avatar;
+  headerAvatar.textContent = av;
+  headerAvatar.className = 'header-avatar' + (CONVS[id].accent ? ' accent-av' : '');
+
+  msgsEl.innerHTML = `<div class="time-sep">${lang === 'en' ? 'today' : "aujourd'hui"}</div><div class="row them"><div class="bubble" style="font-style:italic;opacity:.6">.</div></div>`;
+
+  if (CONVS[id].closed) {
+    closedBanner.style.display = 'flex';
+    setEnabled(false);
+    setHeaderStatus('closed');
+  } else {
+    closedBanner.style.display = 'none';
+    setEnabled(true);
+    setHeaderStatus('online');
+  }
+  scrollBot();
+}
+
+function reopenConv() {
+  CONVS[cur].closed = false;
+  CONVS[cur].count = 0;
+  closedBanner.style.display = 'none';
+  setEnabled(true);
+  const item = document.querySelector(`.conv-item[data-id="${cur}"]`);
+  if (item) item.classList.remove('closed');
+  setHeaderStatus('online');
+  showSysToast(ui('reopenToast'));
+}
+
+function newConv() {
+  convIdx++;
+  const id = 'c' + convIdx;
+  const names = lang === 'en' ? ['New thread','Discussion','Chat','Project '+convIdx,'Channel '+convIdx] : ['Nouveau fil','Discussion','Chat','Projet '+convIdx,'Canal '+convIdx];
+  const name = names[Math.floor(Math.random()*names.length)];
+  const letter = name[0];
+  CONVS[id] = { name, avatar:letter, msgs:[], closed:false, count:0, accent:false };
+  const list = document.getElementById('conv-list');
+  const item = document.createElement('div');
+  item.className = 'conv-item';
+  item.dataset.id = id;
+  item.onclick = () => switchConv(id);
+  item.innerHTML = `
+    <div class="conv-avatar">${letter}<span class="online-dot"></span></div>
+    <div class="conv-meta">
+      <div class="conv-name">${name}</div>
+      <div class="conv-preview" id="preview-${id}">${ui('onlineShort')}</div>
+    </div>
+    <div class="conv-time">${lang === 'en' ? 'now' : 'maintenant'}</div>`;
+  list.appendChild(item);
+  switchConv(id);
+}
+
+function restartApp() {
+  crashScreen.classList.remove('visible');
+  successScreen.classList.remove('visible');
+  hideGameOverlay();
+  cleanupGameState();
+  clearClaudeChaos();
+  Object.keys(CONVS).forEach(id => { CONVS[id].closed = false; CONVS[id].count = 0; });
+  document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('closed'));
+  closedBanner.style.display = 'none';
+  setEnabled(true);
+  successShown = false;
+  patience = 100;
+  lastSendAt = 0;
+  nextMessageDrain = 0;
+  gameActive = false;
+  activeGameId = null;
+  switchConv('general');
+  showSysToast(ui('restartToast'));
+  updateScore();
+  scheduleIdlePrompt();
+}
+
+// ── INPUT ──
+sendBtnEl.addEventListener('click', send);
+inputEl.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
+inputEl.addEventListener('input', () => { inputEl.style.height='auto'; inputEl.style.height=Math.min(inputEl.scrollHeight,80)+'px'; });
+document.getElementById('lang-select').addEventListener('change', e => applyLanguage(e.target.value));
+applyLanguage(lang);
+document.body.setAttribute('data-phase', currentPhase);
+scheduleIdlePrompt();
+</script>
+</body>
+</html>
